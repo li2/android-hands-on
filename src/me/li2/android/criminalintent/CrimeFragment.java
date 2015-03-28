@@ -13,6 +13,10 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 
+/*
+ * CrimeFragment is a controller that interacts with model and view objects. 
+ * Its job is to present the details of a specific crime and update those details as the user changes them.
+ */
 public class CrimeFragment extends Fragment {
     private Crime mCrime;
     private EditText mTitleField;
@@ -20,15 +24,19 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     
     @Override
+    // Configure the fragment instance.
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mCrime = new Crime();
     }
 
     @Override
+    // Create and configure the fragment's view.
     public View onCreateView(LayoutInflater inflater, ViewGroup container,  Bundle savedInstanceState) {
+        // Inflate the layout for the fragment’s view and return the inflated View to the hosting activity.
         View v = inflater.inflate(R.layout.fragment_crime, container, false);
-        
+
+        // Wiring widgets in a fragment.
         mTitleField  = (EditText) v.findViewById(R.id.crime_title);
         mTitleField.addTextChangedListener(new TextWatcher() {
             @Override
