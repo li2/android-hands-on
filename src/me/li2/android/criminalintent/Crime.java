@@ -16,6 +16,11 @@ public class Crime {
         mDate = new Date();
     }
 
+    @Override
+    public String toString() {
+        return mTitle;
+    }
+    
     public String getTitle() {
         return mTitle;
     }
