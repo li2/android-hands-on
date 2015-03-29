@@ -13,6 +13,8 @@ public class CrimeLab {
     
     private CrimeLab(Context appContext) {
         mAppContex = appContext;
+        mCrimes = new ArrayList<Crime>();
+        
         for (int i=0; i<100; i++) {
             Crime c = new Crime();
             c.setTitle("Crime #" + i);
