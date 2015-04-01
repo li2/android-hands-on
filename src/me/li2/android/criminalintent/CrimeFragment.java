@@ -2,6 +2,7 @@ package me.li2.android.criminalintent;
 
 import java.util.UUID;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
@@ -86,5 +87,9 @@ public class CrimeFragment extends Fragment {
         });
         
         return v;
+    }
+    
+    public void returnResult() {
+        getActivity().setResult(Activity.RESULT_OK, null);
     }
 }
