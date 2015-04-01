@@ -28,6 +28,9 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     
     public static CrimeFragment newInstance(UUID crimeId) {
+        // TODO
+        // 如果只是想复用并更新fragment内的数据，而不需要重建，那么应该怎么传递数据呢？
+        // argument已经在实例化时设置过了，再次设置将会导致exception。
         Bundle args = new Bundle();
         args.putSerializable(EXTRA_CRIME_ID, crimeId);
         
