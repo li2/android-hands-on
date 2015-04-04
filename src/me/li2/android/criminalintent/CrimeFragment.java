@@ -5,6 +5,7 @@ import java.util.UUID;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -23,6 +24,8 @@ import android.widget.EditText;
 public class CrimeFragment extends Fragment {
     public static final String EXTRA_CRIME_ID = "me.li2.android.criminalintent.crime_id";
     
+    private static final String DIALOG_DATE = "date";
+    
     private Crime mCrime;
     private EditText mTitleField;
     private Button mDateButton;
@@ -30,7 +33,7 @@ public class CrimeFragment extends Fragment {
     
     public static CrimeFragment newInstance(UUID crimeId) {
         // TODO
-        // 如果只是想复用并更新fragment内的数据，而不需要重建，那么应该怎么传递数据呢？
+        // 如果复用fragment，而不是重建，那么应该怎么传递数据呢？
         // argument已经在实例化时设置过了，再次设置将会导致exception。
         Bundle args = new Bundle();
         args.putSerializable(EXTRA_CRIME_ID, crimeId);
@@ -75,7 +78,14 @@ public class CrimeFragment extends Fragment {
         
         mDateButton = (Button) v.findViewById(R.id.crime_date);
         mDateButton.setText(mCrime.getDate().toString());
-        mDateButton.setEnabled(false);
+        mDateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager fm = getActivity().getSupportFragmentManager();
+                DatePickerFragment dialog = new DatePickerFragment();
+                dialog.show(fm, DIALOG_DATE);
+            }
+        });
         
         mSolvedCheckBox = (CheckBox) v.findViewById(R.id.crime_solved);
         mSolvedCheckBox.setChecked(mCrime.isSolved());
