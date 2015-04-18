@@ -3,8 +3,16 @@ package me.li2.android.criminalintent;
 import java.util.Date;
 import java.util.UUID;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Crime {
 
+    private static final String JSON_ID = "id";
+    private static final String JSON_TITLE = "title";
+    private static final String JSON_SOLVED = "solved";
+    private static final String JSON_DATE = "date";
+    
     private UUID mId;
     private String mTitle;
     private Date mDate;
@@ -14,6 +22,38 @@ public class Crime {
         // Generate unique identifier
         mId = UUID.randomUUID();
         mDate = new Date();
+    }
+    
+    /*
+    http://www.w3school.com.cn/json/
+    JSON：JavaScript 对象表示法（JavaScript Object Notation），是存储和交换文本信息的语法。
+    JSON 数据的书写格式是 key:value
+    value可以是 int, long, double, boolean, Object
+    多个key:value构成一条记录，用{}围起来；多条记录可存入数组[];
+    "people":[
+        {"firstName":"Brett","lastName":"McLaughlin","email":"aaaa"},
+        {"firstName":"Jason","lastName":"Hunter","email":"bbbb"},
+        {"firstName":"Elliotte","lastName":"Harold","email":"cccc"}
+    ]
+    */
+    
+    // Constructor that accepts a JSONObject.
+    public Crime(JSONObject json) throws JSONException {
+        mId = UUID.fromString(json.getString(JSON_ID));
+        if (json.has(JSON_TITLE)) {
+            mTitle = json.getString(JSON_TITLE);
+        }
+        mSolved = json.getBoolean(JSON_SOLVED);
+        mDate = new Date(json.getLong(JSON_DATE));
+    }
+    
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(JSON_ID, mId.toString());
+        json.put(JSON_TITLE, mTitle);
+        json.put(JSON_SOLVED, mSolved);
+        json.put(JSON_DATE, mDate.getTime());
+        return json;
     }
 
     @Override

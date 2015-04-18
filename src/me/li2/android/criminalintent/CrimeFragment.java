@@ -127,7 +127,14 @@ public class CrimeFragment extends Fragment {
         default:
             return super.onOptionsItemSelected(item);
         }
-    }    
+    }
+    
+    @Override
+    // Saving application data in onPause() lifecycle method, this is the safest choice.
+    public void onPause() {
+        super.onPause();
+        CrimeLab.get(getActivity()).saveCrimes();
+    }
     
     public void returnResult() {
         getActivity().setResult(Activity.RESULT_OK, null);
