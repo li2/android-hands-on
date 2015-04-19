@@ -6,6 +6,8 @@ import java.util.UUID;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -16,12 +18,14 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
 /*
  * CrimeFragment is a controller that interacts with model and view objects. 
@@ -37,6 +41,7 @@ public class CrimeFragment extends Fragment {
     private EditText mTitleField;
     private Button mDateButton;
     private CheckBox mSolvedCheckBox;
+    private ImageButton mPhotoButton;
     
     public static CrimeFragment newInstance(UUID crimeId) {
         // TODO
@@ -113,6 +118,24 @@ public class CrimeFragment extends Fragment {
             }
         });
         
+        mPhotoButton = (ImageButton) v.findViewById(R.id.crime_imageButton);
+        mPhotoButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getActivity(), CrimeCameraActivity.class);
+                startActivity(intent);
+            }
+        });
+        
+        // If camera is not available, disable camera functionality
+        PackageManager pm = getActivity().getPackageManager();
+        boolean hasACamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) ||
+                (Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD) ||
+                Camera.getNumberOfCameras() > 0;
+        if (!hasACamera) {
+            mPhotoButton.setEnabled(false);
+        }
         return v;
     }
     

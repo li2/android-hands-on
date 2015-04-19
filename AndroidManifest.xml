@@ -7,6 +7,8 @@
     <uses-sdk
         android:minSdkVersion="11"
         android:targetSdkVersion="21" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera"/>
 
     <application
         android:allowBackup="true"
@@ -29,6 +31,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        
+        <activity
+            android:name=".CrimeCameraActivity"
+            android:screenOrientation="landscape"
+            android:label="@string/app_name">
+        </activity>
+        
     </application>
 
 </manifest>
