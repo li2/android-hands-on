@@ -2,10 +2,12 @@ package me.li2.android.criminalintent;
 
 import java.util.ArrayList;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -14,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -42,6 +45,7 @@ public class CrimeListFragment extends ListFragment{
         mSubtitleVisible = false;
     }
     
+    @TargetApi(11)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
        View v = super.onCreateView(inflater, parent, savedInstanceState);
@@ -54,9 +58,17 @@ public class CrimeListFragment extends ListFragment{
        
        // 使用android.R.id.list资源ID获取ListFragment管理着的ListView
        ListView listView = (ListView) v.findViewById(android.R.id.list);
-       // By default, a long-press on a view does not trigger the creation of a context menu.
-       // Must register a view for a floating context menu by calling the following Fragment method:
-       registerForContextMenu(listView);
+       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+           // Use floating context menus on Froyo and Gingerbread
+           // By default, a long-press on a view does not trigger the creation of a context menu.
+           // Must register a view for a floating context menu by calling the following Fragment method:
+           registerForContextMenu(listView);
+       } else {
+           // Use contextual action bar on Honeycomb and higher
+           // 所谓Contextual Action Mode(上下文操作模式)，菜单项会覆盖操作栏.
+           listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+           listView.setMultiChoiceModeListener(mMultiChoiceClickListener);
+       }
        return v;
     }
     
@@ -142,6 +154,52 @@ public class CrimeListFragment extends ListFragment{
         }
         return super.onContextItemSelected(item);
     }
+    
+    private MultiChoiceModeListener mMultiChoiceClickListener = new MultiChoiceModeListener() {
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+            // Required, but not used in this implementation
+        }
+        
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            // Required, but not used in this implementation
+        }
+        
+        @Override
+        // ActionMode Callback methods
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.crime_list_item_context, menu);
+            return true;
+        }
+        
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+            case R.id.menu_item_delete_crime:
+                CrimeAdapter adapter = (CrimeAdapter) getListAdapter();
+                CrimeLab crimeLab = CrimeLab.get(getActivity());
+                for (int i = adapter.getCount() - 1; i >= 0; i--) {
+                    if (getListView().isItemChecked(i)) {
+                        crimeLab.deleteCrime(adapter.getItem(i));
+                    }
+                }
+                crimeLab.saveCrimes();
+                mode.finish();
+                adapter.notifyDataSetChanged();
+                return true;
+            default:
+                return false;
+            }
+        }
+        
+        @Override
+        public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+            // Required, but not used in this implementation
+        }
+    };
     
     private class CrimeAdapter extends ArrayAdapter<Crime> {
         public CrimeAdapter(ArrayList<Crime> crimes) {
