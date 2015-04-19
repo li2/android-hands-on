@@ -6,12 +6,15 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
@@ -49,6 +52,11 @@ public class CrimeListFragment extends ListFragment{
            }
        }
        
+       // 使用android.R.id.list资源ID获取ListFragment管理着的ListView
+       ListView listView = (ListView) v.findViewById(android.R.id.list);
+       // By default, a long-press on a view does not trigger the creation of a context menu.
+       // Must register a view for a floating context menu by calling the following Fragment method:
+       registerForContextMenu(listView);
        return v;
     }
     
@@ -109,6 +117,30 @@ public class CrimeListFragment extends ListFragment{
         default:
             return super.onOptionsItemSelected(item);
         }
+    }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        getActivity().getMenuInflater().inflate(R.menu.crime_list_item_context, menu);
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+        int position = info.position;
+        CrimeAdapter adapter = (CrimeAdapter) getListAdapter();
+        Crime crime = adapter.getItem(position);
+        
+        switch (item.getItemId()) {
+        case R.id.menu_item_delete_crime:
+            CrimeLab.get(getActivity()).deleteCrime(crime);
+            CrimeLab.get(getActivity()).saveCrimes();
+            // The content of the adapter has changed but ListView did not receive a notification.
+            // Make sure the content of your adapter is not modified from a background thread, but only from the UI thread.
+            adapter.notifyDataSetChanged();
+            return true;
+        }
+        return super.onContextItemSelected(item);
     }
     
     private class CrimeAdapter extends ArrayAdapter<Crime> {
