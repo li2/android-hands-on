@@ -18,6 +18,14 @@
             android:orientation="vertical"
             android:layout_marginRight="4dp" >
 
+            <ImageView android:id="@+id/crime_imageView"
+                android:contentDescription="@string/app_name"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerInside"
+                android:background="@android:color/darker_gray"
+                android:cropToPadding="true"/>
+            
             <ImageButton
                 android:id="@+id/crime_imageButton"
                 android:layout_width="match_parent"

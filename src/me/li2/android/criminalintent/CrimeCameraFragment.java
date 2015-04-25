@@ -1,9 +1,14 @@
 package me.li2.android.criminalintent;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.os.Build;
@@ -21,9 +26,12 @@ import android.widget.Button;
 @SuppressWarnings("deprecation") // 使用该注解来消除弃用代码相关的警告信息
 public class CrimeCameraFragment extends Fragment {
     private static final String TAG = "CrimeCameraFragment";
+    public static final String EXTRA_PHOTO_FILENAME = 
+            "me.li2.android.criminalintent.photo_filename";
     
     private Camera mCamera;
     private SurfaceView mSurfaceView;
+    private View mProgressContainer;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInatanceState) {
@@ -42,7 +50,9 @@ public class CrimeCameraFragment extends Fragment {
         takePictureButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                getActivity().finish();
+                if (mCamera != null) {
+                    mCamera.takePicture(mShutterCallback, null, mPictureCallback);
+                }
             }
         });
 
@@ -53,6 +63,9 @@ public class CrimeCameraFragment extends Fragment {
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         holder.addCallback(mSurfaceHolderCallback);
 
+        mProgressContainer = v.findViewById(R.id.crime_camera_progressContainer);
+        mProgressContainer.setVisibility(View.INVISIBLE);
+        
         return v;
     }
 
@@ -122,6 +135,9 @@ public class CrimeCameraFragment extends Fragment {
             // 确定预览界面大小，通过Camera.Parameters嵌套类获取系统支持的相机预览尺寸列表。
             Size s = getBestSupportedSize(parameters.getSupportedPreviewSizes(), width, height);
             parameters.setPreviewSize(s.width, s.height);
+            // 设置图片尺寸大小
+            s = getBestSupportedSize(parameters.getSupportedPictureSizes(), width, height);
+            parameters.setPictureSize(s.width, s.height);
             mCamera.setParameters(parameters);
             try {
                 mCamera.startPreview();
@@ -147,5 +163,51 @@ public class CrimeCameraFragment extends Fragment {
         
         return bestSize;
     }
+    
+    private Camera.ShutterCallback mShutterCallback = new Camera.ShutterCallback() {
+        @Override
+        public void onShutter() {
+            // Display the progress indictor
+            mProgressContainer.setVisibility(View.VISIBLE);
+        }
+    };
+    
+    private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            // Create a filename
+            String filename = UUID.randomUUID().toString() + ".jpg";
+            // Save the jpeg to disk
+            // 使用Java I/O类打开一个输出流，将从Camera传入的JPEG数据写入文件.
+            FileOutputStream os = null;
+            boolean sucess = true;
+            
+            try {
+                os = getActivity().openFileOutput(filename, Context.MODE_PRIVATE);
+                os.write(data);
+            } catch (Exception e) {
+                Log.e(TAG, "Error writing to file " + filename, e);
+                sucess = false;
+            } finally {
+                try {
+                    if (os != null) {
+                        os.close();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing file " + filename, e);
+                    sucess = false;
+                }
+            }
+            
+            if (sucess) {
+                Intent intent = new Intent();
+                intent.putExtra(EXTRA_PHOTO_FILENAME, filename);
+                getActivity().setResult(Activity.RESULT_OK, intent);
+            } else {
+                getActivity().setResult(Activity.RESULT_CANCELED);
+            }
+            getActivity().finish();
+        }
+    };
 
 }
