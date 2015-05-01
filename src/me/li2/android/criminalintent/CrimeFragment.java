@@ -1,21 +1,27 @@
 package me.li2.android.criminalintent;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -42,6 +48,7 @@ public class CrimeFragment extends Fragment {
     private static final String DIALOG_IMAGE = "image";
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_PHOTO = 1;
+    private static final int REQUEST_CONTACT = 2;
     
     private Crime mCrime;
     private EditText mTitleField;
@@ -49,6 +56,7 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
+    private Button mSuspectButton;
     
     public static CrimeFragment newInstance(UUID crimeId) {
         // TODO
@@ -158,6 +166,50 @@ public class CrimeFragment extends Fragment {
         if (!hasACamera) {
             mPhotoButton.setEnabled(false);
         }
+        
+        Button reportButton = (Button) v.findViewById(R.id.crime_reportButton);
+        reportButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // the action that you are trying to perform
+                // 任务是发送一段文字信息，因此，隐式intent的操作是ACTION_SEND
+                Intent i = new Intent(Intent.ACTION_SEND);
+                
+                // the type of data that the action is for，
+                // 不指向任何数据，也不包含任何类别， 但会指定数据类型为text/plain
+                i.setType("text/plain");
+                
+                // 报告文本以及报告主题字符串作为extra附加到intent上
+                i.putExtra(Intent.EXTRA_TEXT, getCrimeReport());
+                i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject));
+                
+                // 若看不到候选activity列表，原因有2：针对某个隐式intent设置了默认响应应用，
+                // 要么是设备上只有唯一一个activity可以响应隐式intent。
+                // 为了将选择权交给用户，创建一个每次都显示的activity选择器。
+                i = Intent.createChooser(i, getString(R.string.send_report));
+                
+                // 如果没有与目标隐式intent相匹配的activity, 应用会立即崩溃。解决办法是首先通过操作系统中的PackageManager类进行自检。
+                PackageManager pm = getActivity().getPackageManager();
+                List<ResolveInfo> activities = pm.queryIntentActivities(i, 0);
+                boolean isIntentSafe = activities.size() > 0;
+                if (isIntentSafe) {
+                    startActivity(i);
+                }
+            }
+        });
+        
+        mSuspectButton = (Button) v.findViewById(R.id.crime_suspectButton);
+        mSuspectButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 请求Android协助从联系人数据库里获取某个具体联系人。第2个参数是数据获取位置 Uri
+                // 统一资源标识符 Uniform Resource Identifier 用于标识某一互联网资源名称的字符串。
+                // 该种标识允许用户对任何（包括本地和互联网）的资源通过特定的协议进行交互操作。
+                Intent i = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                startActivityForResult(i, REQUEST_CONTACT);
+            }
+        });
+
         return v;
     }
     
@@ -220,6 +272,7 @@ public class CrimeFragment extends Fragment {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
             updateDate();
+            
         } else if (requestCode == REQUEST_PHOTO) {
             // Create a new photo object and attach it to the crime
             String filename = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
@@ -229,10 +282,61 @@ public class CrimeFragment extends Fragment {
                 showPhoto();
                 Log.i(TAG, "Crime: " + mCrime.getTitle() + " has a photo");
             }
+            
+        } else if (requestCode == REQUEST_CONTACT) {
+           // 联系人应用返回包含在intent中的URI数据给父activity时，它会添加一个Intent.FLAG_GRANT_READ_URI_PERMISSION标志。
+           // 该标志向Android示意，CriminalIntent应用中的父activity可以使用联系人数据一次。
+           // 因此我们就获得读取联系人数据库的权限，是被临时授予的。
+           Uri contactUri = data.getData();
+           
+           // Specify which fields you want your query to return values for.
+           String[] queryFields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
+           
+           // Perform your query - the contactUri is like a "where" clause here.
+           // 创建了一条查询语句，要求返回全部联系人的显示名字(由第2个参数queryFields决定只返回名字)
+           // ContentProvider类的实例封装了联系人数据库并提供给其他应用使用，通过ContentResolver访问ContentProvider.
+           Cursor c = getActivity().getContentResolver().query(contactUri, queryFields, null, null, null);
+           
+           // Double-check that you actually got results
+           if (c.getCount() == 0) {
+               c.close();
+               return;
+           }
+           
+           // Pull out the first column of the first row of data that is your suspect's name.
+           c.moveToFirst();
+           String suspect = c.getString(0);
+           mCrime.setSuspect(suspect);
+           mSuspectButton.setText(suspect);
+           c.close();
         }
     }
     
     public void updateDate() {
-        mDateButton.setText(mCrime.getDate().toString());
+        String dateFormat = "EEE, MMM dd";
+        String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
+        mDateButton.setText(dateString);
+    }
+    
+    private String getCrimeReport() {
+        String solvedString = null;
+        if (mCrime.isSolved()) {
+            solvedString = getString(R.string.crime_report_solved);
+        } else {
+            solvedString = getString(R.string.crime_report_unsolved);
+        }
+
+        String dateFormat = "EEE, MMM dd";
+        String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
+
+        String suspect = mCrime.getSuspect();
+        if (suspect == null) {
+            suspect = getString(R.string.crime_report_no_suspect);
+        } else {
+            suspect = getString(R.string.crime_report_suspect, suspect);
+        }
+        
+        String report = getString(R.string.crime_report, mCrime.getTitle(), dateString, solvedString, suspect);        
+        return report;
     }
 }
