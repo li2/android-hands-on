@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class Li2LauncherFragment extends ListFragment {
@@ -73,5 +75,20 @@ public class Li2LauncherFragment extends ListFragment {
         
         setListAdapter(adapter);
     }
-    
+
+    @Override
+    // 点击列表项时，创建显示intent，以启动对应的activity.
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        ResolveInfo resolveInfo = (ResolveInfo)l.getAdapter().getItem(position);
+        ActivityInfo activityInfo = resolveInfo.activityInfo;
+        if (activityInfo == null) {
+            return;
+        }
+        
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        // 使用包名和类名创建一个显式intent： setClassName(String packageName, String className)
+        // 不同于之前的方式：Intent(Context packageContext, Class<?> cls)
+        intent.setClassName(activityInfo.applicationInfo.packageName, activityInfo.name);
+        startActivity(intent);
+    }    
 }
