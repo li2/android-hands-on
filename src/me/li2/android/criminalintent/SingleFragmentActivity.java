@@ -9,10 +9,14 @@ public abstract class SingleFragmentActivity extends FragmentActivity {
 
     protected abstract Fragment createFragment();
     
+    protected int getLayoutResId() {
+        return R.layout.activity_fragment;
+    }
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_fragment);
+        setContentView(getLayoutResId());
         
         // Get the FragmentManager.
         FragmentManager fm = getSupportFragmentManager();

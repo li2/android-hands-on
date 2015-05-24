@@ -3,6 +3,7 @@ package me.li2.android.criminalintent;
 import java.util.ArrayList;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +29,12 @@ public class CrimeListFragment extends ListFragment{
     private static final int REQUEST_CRIME = 1;
     private ArrayList<Crime> mCrimes;
     private boolean mSubtitleVisible;
+    private Callbacks mCallbacks;
+    
+    // Required interface for hosting activities.
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -72,7 +79,6 @@ public class CrimeListFragment extends ListFragment{
        return v;
     }
     
-    
     @Override
     public void onResume() {
         super.onResume();
@@ -80,12 +86,36 @@ public class CrimeListFragment extends ListFragment{
     }
 
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // 在fragment附加给activity时，将托管activity强制类型转换为Callbacks对象并赋值给Callbacks类型变量。
+        // 强制转换而未经类安全性检查，所以托管activity必须实现CrimeListFragment.Callbacks接口。
+        mCallbacks = (Callbacks)activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
+    public void updateUI() {
+        ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+    }
+
+    @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        Crime c = ((CrimeAdapter) l.getAdapter()).getItem(position);
+        Crime crime = ((CrimeAdapter) l.getAdapter()).getItem(position);
+        // 定义fragment的Callbacks，委托fragment的“托管activity”完成具体的工作，
+        // 以此保证fragment作为独立的开发构件，而不必知道其“托管activity”是如何工作的。
+        // “托管activity”要做的事情是：
+        // 针对平板，把CrimeFragment添加到detailFragmentContainer；针对手机，把启动CrimePagerActivity.
+        mCallbacks.onCrimeSelected(crime);
+        // 因此需要删除以下代码。
         // Start CrimePagerActivity with this crime
-        Intent i = new Intent(getActivity(), CrimePagerActivity.class);
-        i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
-        startActivityForResult(i, REQUEST_CRIME);
+        // Intent i = new Intent(getActivity(), CrimePagerActivity.class);
+        // i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
+        // startActivityForResult(i, REQUEST_CRIME);
     }
     
     @Override
@@ -111,9 +141,8 @@ public class CrimeListFragment extends ListFragment{
         case R.id.menu_item_new_crime:
             Crime crime = new Crime();
             CrimeLab.get(getActivity()).addCrime(crime);
-            Intent i = new Intent(getActivity(), CrimePagerActivity.class);
-            i.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
-            startActivityForResult(i, 0);
+            ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+            mCallbacks.onCrimeSelected(crime);
             return true;
         case R.id.menu_item_show_subtitle:
             if (getActivity().getActionBar().getSubtitle() == null) {

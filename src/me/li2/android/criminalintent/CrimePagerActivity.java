@@ -11,7 +11,9 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 
-public class CrimePagerActivity  extends FragmentActivity {
+public class CrimePagerActivity  extends FragmentActivity 
+    implements CrimeFragment.Callbacks {
+    
     private ViewPager mViewPager;
     private ArrayList<Crime>mCrimes;
     
@@ -62,5 +64,12 @@ public class CrimePagerActivity  extends FragmentActivity {
                 break;
             }
         }
+    }
+
+    @Override
+    public void onCrimeUpdated(Crime crime) {
+        // 因为CrimePagerActivity托管了CrimeFragment，所以必须要实现其callbacks，
+        // 而对于单版界面，列表的刷新已经在 CrimeListFragment.onResume()中完成了，
+        // 所以这个方法留空即可。
     }
 }

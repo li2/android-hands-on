@@ -57,6 +57,12 @@ public class CrimeFragment extends Fragment {
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
     private Button mSuspectButton;
+    private Callbacks mCallbacks;
+    
+    // Required interface for hosting activities.
+    public interface Callbacks {
+        void onCrimeUpdated(Crime crime);
+    }
     
     public static CrimeFragment newInstance(UUID crimeId) {
         // TODO
@@ -101,6 +107,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mCrime.setTitle(s.toString());
+                mCallbacks.onCrimeUpdated(mCrime);
             }
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count,  int after) {
@@ -130,6 +137,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 mCrime.setSolved(isChecked);
+                mCallbacks.onCrimeUpdated(mCrime);
             }
         });
         
@@ -240,6 +248,20 @@ public class CrimeFragment extends Fragment {
     }
     
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // java.lang.ClassCastException: CrimePagerActivity cannot be cast to CrimeFragment$Callbacks
+        // 如果在手机上运行，将会崩溃；因为任何托管CrimeFragment的activity都必须实现CrimeFragment.Callbacks接口。
+        mCallbacks = (Callbacks)activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
@@ -271,6 +293,7 @@ public class CrimeFragment extends Fragment {
         if (requestCode == REQUEST_DATE) {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
+            mCallbacks.onCrimeUpdated(mCrime);
             updateDate();
             
         } else if (requestCode == REQUEST_PHOTO) {
@@ -279,6 +302,7 @@ public class CrimeFragment extends Fragment {
             if (filename != null) {
                 Photo photo = new Photo(filename);
                 mCrime.setPhoto(photo);
+                mCallbacks.onCrimeUpdated(mCrime);
                 showPhoto();
                 Log.i(TAG, "Crime: " + mCrime.getTitle() + " has a photo");
             }
@@ -307,6 +331,7 @@ public class CrimeFragment extends Fragment {
            c.moveToFirst();
            String suspect = c.getString(0);
            mCrime.setSuspect(suspect);
+           mCallbacks.onCrimeUpdated(mCrime);
            mSuspectButton.setText(suspect);
            c.close();
         }
