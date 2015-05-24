@@ -89,6 +89,10 @@ public class Li2LauncherFragment extends ListFragment {
         // 使用包名和类名创建一个显式intent： setClassName(String packageName, String className)
         // 不同于之前的方式：Intent(Context packageContext, Class<?> cls)
         intent.setClassName(activityInfo.applicationInfo.packageName, activityInfo.name);
+        // Android都使用task来跟踪用户的状态。task是用户比较关心的 a stack of activities.
+        // 默认情况下，新activity都在当前task中启动，用户就可以在任务内而不是在应用层级间导航返回；
+        // 而添加如下flag，可在新任务中启动activity，用户就可以在运行的应用间自由切换。
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
     }    
 }
