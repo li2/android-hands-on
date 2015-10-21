@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 使Activity支持搜索的配置文件之1：
+一个独立的xml文件，包含一个名为searchable的节点，用来描述搜索对话框应该如何显示自身. 也被称作搜索配置文件。
+目前只需要提供搜索文字提示和应用名称。
+This XML file contains an element called searchable
+that describes how the search dialog that you will show later should display itself. -->
+<searchable xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="@string/app_name"
+    android:hint="@string/search_hint" />

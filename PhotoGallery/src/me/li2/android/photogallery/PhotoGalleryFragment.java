@@ -9,6 +9,9 @@ import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -25,8 +28,9 @@ public class PhotoGalleryFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
-        new FetchItemsTask().execute();
+        setRetainInstance(true);        
+        setHasOptionsMenu(true); // 注册选项菜单
+        updateItems();
         
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？
@@ -43,6 +47,12 @@ public class PhotoGalleryFragment extends Fragment {
         mThumbnailThread.start();
         mThumbnailThread.getLooper();
         Log.i(TAG, "Background thread started");
+    }
+    
+    // 因为search intent是由Activity接收处理的，所以fragment的刷新时机由activity控制，
+    // 所以我们需要提供一个public方法，以供activity刷新fragment。
+    public void updateItems() {
+        new FetchItemsTask().execute();
     }
     
     @Override
@@ -67,6 +77,34 @@ public class PhotoGalleryFragment extends Fragment {
         mThumbnailThread.clearQueue();
     }
     
+    // 添加选项菜单的回调方法 Options menu callbacks:
+    // 1. Override onCreateOptionsMenu(Menu menu, MenuInflater inflater);
+    // 2. Override onOptionsItemSelected(MenuItem item);
+    // 3. Call setHasOptionsMenu(true); to report that this fragment would like to
+    // participate in populating the options menu 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_photo_gallery, menu);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.ment_item_search:
+            // This hook is called when the user signals the desire to start a search.
+            // You can use this function as a simple way to launch the search UI.
+            // SearchManager是系统级服务，负责展现搜索对话框，并管理搜索相关的交互。这句话拆开来说，是这样的：
+            // SearchManager检查manifest以确认当前activity是否支持搜索；若支持，就在其上覆盖一个搜索对话框；
+            // 然后把search intent发送给当前activity。
+            getActivity().onSearchRequested();
+            return true;
+        case R.id.menu_item_clear:
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
     void setupAdapter() {
         // when using an AsyncTask, you must check to make sure that your fragment is still attached.
         // If it is not, then operations that rely on the that activity (like creating your ArrayAdapter) will fail. 
@@ -86,7 +124,12 @@ public class PhotoGalleryFragment extends Fragment {
     private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... params) {
-            return new FlickrFetchr().fetchItems();
+            String query = "android"; // Just for testing
+            if (query != null) {
+                return new FlickrFetchr().search(query);
+            } else {
+                return new FlickrFetchr().fetchItems();
+            }
         }
         
         @Override
