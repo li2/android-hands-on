@@ -18,6 +18,8 @@ import android.util.Log;
 public class FlickrFetchr {
     public static final String TAG = "FlickrFetchr";
     
+    public static final String PREF_SEARCH_QUERY = "searchQuery";
+    
     // Flickr recently changed to https, so we need to change http to https.
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
     // The Url to get recent photos on flickr.com

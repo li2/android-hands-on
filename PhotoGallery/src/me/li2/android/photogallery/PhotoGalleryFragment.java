@@ -2,10 +2,18 @@ package me.li2.android.photogallery;
 
 import java.util.ArrayList;
 
+import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener;
+import android.app.Activity;
+import android.app.SearchManager;
+import android.app.SearchableInfo;
+import android.content.ComponentName;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,7 +25,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener;
+import android.widget.SearchView;
 
 public class PhotoGalleryFragment extends Fragment {
     private static final String TAG = "PhotoGalleryFragment";
@@ -86,12 +94,32 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
+        // 由于SearchView不会调用到onOptionsItemSelected()回调方法 ，
+        // 所以相比于未使用SearchView之前，我们必须把SearchManager在幕后承担的获取搜索配置信息并显示搜索界面的工作，
+        // 放到“前台”：
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            // Pull out the SearchView 获取搜索菜单项的操作视图。
+            MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+            SearchView searchView = (SearchView)searchItem.getActionView();
+            
+            // Get the data from our searchable.xml as a SearchableInfo
+            // 通过SearchManager获取搜索配置信息，包括：接收intent的activity，searchabel.xml中的信息。
+            SearchManager searchManager = (SearchManager)getActivity()
+                    .getSystemService(Context.SEARCH_SERVICE);
+            // me.li2.android.photogallery/me.li2.android.photogallery.PhotoGalleryActivity
+            ComponentName name = getActivity().getComponentName();
+            SearchableInfo searchableInfo = searchManager.getSearchableInfo(name);
+            
+            // 然后将相关信息通知给SearchView。
+            searchView.setSearchableInfo(searchableInfo);
+        }
     }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-        case R.id.ment_item_search:
+        case R.id.menu_item_search:
+            Log.d(TAG, "on search item selected");
             // This hook is called when the user signals the desire to start a search.
             // You can use this function as a simple way to launch the search UI.
             // SearchManager是系统级服务，负责展现搜索对话框，并管理搜索相关的交互。这句话拆开来说，是这样的：
@@ -100,6 +128,12 @@ public class PhotoGalleryFragment extends Fragment {
             getActivity().onSearchRequested();
             return true;
         case R.id.menu_item_clear:
+            // 清除搜索信息。
+            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .edit()
+                .putString(FlickrFetchr.PREF_SEARCH_QUERY, null)
+                .commit();
+            updateItems();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -124,8 +158,16 @@ public class PhotoGalleryFragment extends Fragment {
     private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... params) {
-            String query = "android"; // Just for testing
+            Activity activity = getActivity();
+            if (activity == null) {
+                return new ArrayList<GalleryItem>();
+            }
+
+            // 取回存储在shared preferences中的搜索信息。
+            String query = PreferenceManager.getDefaultSharedPreferences(activity)
+                    .getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
             if (query != null) {
+                Log.d(TAG, "Search query: " + query);
                 return new FlickrFetchr().search(query);
             } else {
                 return new FlickrFetchr().fetchItems();
