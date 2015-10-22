@@ -19,6 +19,7 @@ public class FlickrFetchr {
     public static final String TAG = "FlickrFetchr";
     
     public static final String PREF_SEARCH_QUERY = "searchQuery";
+    public static final String PREF_LAST_RESULT_ID = "lastResultId";
     
     // Flickr recently changed to https, so we need to change http to https.
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944

@@ -41,9 +41,6 @@ public class PhotoGalleryFragment extends Fragment {
         setHasOptionsMenu(true); // 注册选项菜单
         updateItems();
         
-        Intent polllServiceIntent = new Intent(getActivity(), PollService.class);
-        getActivity().startService(polllServiceIntent);
-        
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？
         // 把主线程的handler传给后台线程，后台线程就可以通过这个handler传递消息给主线程，以安排主线程显示图片。
@@ -139,8 +136,31 @@ public class PhotoGalleryFragment extends Fragment {
                 .commit();
             updateItems();
             return true;
+        case R.id.menu_item_toggle_polling:
+            // 增加菜单选项，以控制定时器起停。
+            boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+            PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+            // 为了确保onPrepareOptionsMenu()被调到。
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
+                getActivity().invalidateOptionsMenu();
+            }
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    
+    // 选项菜单不会每次使用时都被重新实例化，所以如果需要更新它的菜单项内容，
+    // 可以在覆写下述方法，因为每次显示菜单时都会调用该方法，。
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        
+        MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
+        if (PollService.isServiceAlarmOn(getActivity())) {
+            toggleItem.setTitle(R.string.stop_polling);
+        } else {
+            toggleItem.setTitle(R.string.start_polling);
+        }
     }
     
     void setupAdapter() {
