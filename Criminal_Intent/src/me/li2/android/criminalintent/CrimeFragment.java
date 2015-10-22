@@ -18,13 +18,11 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -93,12 +91,8 @@ public class CrimeFragment extends Fragment {
         // Inflate the layout for the fragment’s view and return the inflated View to the hosting activity.
         View v = inflater.inflate(R.layout.fragment_crime, container, false);
 
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
-            if (NavUtils.getParentActivityName(getActivity()) != null) {
-                // Enables the "home" icon to be some kind of button and displays the "<".
-                getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
-            }
-        }
+        // 这段代码移到了 CrimePagerActivity中
+        // getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
         
         // Wiring widgets in a fragment.
         mTitleField  = (EditText) v.findViewById(R.id.crime_title);
@@ -259,19 +253,6 @@ public class CrimeFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mCallbacks = null;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-        case android.R.id.home:
-            if (NavUtils.getParentActivityName(getActivity()) != null) {
-                NavUtils.navigateUpFromSameTask(getActivity());
-            }
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
-        }
     }
     
     @Override
