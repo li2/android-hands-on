@@ -8,6 +8,7 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -39,6 +40,9 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true);        
         setHasOptionsMenu(true); // 注册选项菜单
         updateItems();
+        
+        Intent polllServiceIntent = new Intent(getActivity(), PollService.class);
+        getActivity().startService(polllServiceIntent);
         
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？

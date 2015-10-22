@@ -37,6 +37,7 @@
             <meta-data android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
+        <service android:name=".PollService" />
     </application>
 
 </manifest>
