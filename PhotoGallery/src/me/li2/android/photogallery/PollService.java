@@ -20,6 +20,10 @@ public class PollService extends IntentService {
     private static final String TAG = "PollService";
     
     private static final int POLL_INTERVAL = 1000 * 60 * 5; // 5 minutes
+    public static final String PREF_IS_ALARM_ON = "isAlarmOn";
+    // TODO
+    public static final String ACTION_SHOW_NOTIFICATION = 
+            "me.li2.android.photogallery.SHOW_NOTIFICATION";
 
     public PollService() {
         super(TAG);
@@ -77,7 +81,9 @@ public class PollService extends IntentService {
             // notification的标识符，在整个应用中该值应该是唯一的；
             // 如使用同一ID发送两条消息，则第二条消息会替换掉第一条消息；
             // 这也是进度条或其他动态视觉效果的实现方式。
-            notificationManager.notify(0, notification);            
+            notificationManager.notify(0, notification);
+            // TODO
+            sendBroadcast(new Intent(ACTION_SHOW_NOTIFICATION));
         }
         
         // 把最新图片集的第一条ID保存到shared preferences。
@@ -113,6 +119,12 @@ public class PollService extends IntentService {
             alarmManager.cancel(pi);
             pi.cancel();
         }
+        
+        // 保存定时器开关的状态
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit()
+            .putBoolean(PollService.PREF_IS_ALARM_ON, isOn)
+            .commit();            
     }
     
     // 由于在取消Alarm的同时也取消了pi，并且一个PendingIntent只能登记给一个Alarm，
