@@ -82,7 +82,8 @@ public class PollService extends IntentService {
             // 如使用同一ID发送两条消息，则第二条消息会替换掉第一条消息；
             // 这也是进度条或其他动态视觉效果的实现方式。
             notificationManager.notify(0, notification);
-            // TODO
+            
+            // 发送自己的broadcast intent：只需要创建一个intent，并传入sendBroadcast()方法即可。
             sendBroadcast(new Intent(ACTION_SHOW_NOTIFICATION));
         }
         
