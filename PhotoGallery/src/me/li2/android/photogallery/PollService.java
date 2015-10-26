@@ -21,10 +21,12 @@ public class PollService extends IntentService {
     
     private static final int POLL_INTERVAL = 1000 * 60 * 5; // 5 minutes
     public static final String PREF_IS_ALARM_ON = "isAlarmOn";
-    // TODO
+    
     public static final String ACTION_SHOW_NOTIFICATION = 
             "me.li2.android.photogallery.SHOW_NOTIFICATION";
-
+    // 这个表示权限的字符串，在App中出现3次，另外2次在manifest，必须保证完全一致。
+    public static final String PERM_PRIVATE = "me.li2.android.photogallery.PRIVATE";
+    
     public PollService() {
         super(TAG);
     }
@@ -83,8 +85,11 @@ public class PollService extends IntentService {
             // 这也是进度条或其他动态视觉效果的实现方式。
             notificationManager.notify(0, notification);
             
-            // 发送自己的broadcast intent：只需要创建一个intent，并传入sendBroadcast()方法即可。
-            sendBroadcast(new Intent(ACTION_SHOW_NOTIFICATION));
+            // 发送带有权限的的自定义broadcast intent：创建intent，和权限字串，一并传入sendBroadcast()；
+            // 这样就指定了接收权限，任何应用必须使用同样的权限才能接收从这儿发出的intent.
+            // @receiverPermission: String naming a permission that a receiver must hold
+            // in order to receive your broadcast. If null, no permission is required.
+            sendBroadcast(new Intent(ACTION_SHOW_NOTIFICATION), PERM_PRIVATE);
         }
         
         // 把最新图片集的第一条ID保存到shared preferences。

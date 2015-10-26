@@ -33,7 +33,9 @@ public abstract class VisibleFragment extends Fragment {
         */
         IntentFilter filter = new IntentFilter(PollService.ACTION_SHOW_NOTIFICATION);
         // 配置filter：filter.addCategory(category); filter.addAction(action); ...
-        getActivity().registerReceiver(mOnShowNotification, filter);
+        // 为receiver指定同样的权限，这样才可以接收具有这个权限的broadcast.
+        getActivity().registerReceiver(mOnShowNotification, filter,
+                PollService.PERM_PRIVATE, null);
     };
     
     @Override

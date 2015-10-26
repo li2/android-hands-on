@@ -8,10 +8,24 @@
         android:minSdkVersion="11"
         android:targetSdkVersion="21" />
     
+    <!-- Private Permission：使用dynamic broadcast receiver存在一个问题，系统中的任何应用都可以监听broadcast
+    , 或者触发这个receiver. 为防止被未授权的App使用，可以创建自己的安全许可，用来控制other package访问
+    , your package的components/features.
+    , 自定义permission必须设置属性protectionLevel，Android根据该属性值确定自定义权限的使用方式。
+    , signature安全级别表明，如果其它App需要使用我们自定义的权限，则必须使用和当前应用相同的key做签名认证。
+    , 既然其它App并没有相同的key，也就无法触碰被权限保护的东西。
+    , 因此，对于仅限应用内部使用的权限，通常选择signature. -->
+    <permission android:name="me.li2.android.photogallery.PRIVATE"
+        android:protectionLevel="signature" />
+    
+    <!-- The "uses-permission" tag requests a "permission" that the 
+        containing package must be granted in order for it to operate 
+        correctly. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 允许app接收系统启动完成后的广播消息，这里有个坑，手机设置中有“开机自启动项”，app被禁止了 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="me.li2.android.photogallery.PRIVATE"/>
     
     <application
         android:allowBackup="true"
