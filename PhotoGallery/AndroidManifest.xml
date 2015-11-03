@@ -55,6 +55,12 @@
                 android:resource="@xml/searchable" />
         </activity>
         
+        <!-- Lists configuration changes that the activity will handle itself
+        , 如果设备配置改变（键盘隐藏、屏幕方向改变、屏幕大小改变 ），那么Activity将自己处理配置更改，
+        , 无需销毁并重建Activity，这样屏幕旋转时，就不必重新加载Url -->
+        <activity android:name=".PhotoPageActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize" />
+        
         <!-- 登记service -->
         <service android:name=".PollService" />
         

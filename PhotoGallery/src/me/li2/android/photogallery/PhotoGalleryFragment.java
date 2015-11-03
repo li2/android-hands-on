@@ -79,7 +79,10 @@ public class PhotoGalleryFragment extends VisibleFragment {
                GalleryItem item = mItems.get(pos);
                
                Uri photoPageUri = Uri.parse(item.getPhotoPageUrl());
-               Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
+               // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
+               // 使用显示 explicit intent 代替隐式 implicit intent，在应用内的WebView中打开图片，而不是在外部的浏览器。
+               Intent i = new Intent(getActivity(), PhotoPageActivity.class);
+               i.setData(photoPageUri);
                startActivity(i);
            }
         });
