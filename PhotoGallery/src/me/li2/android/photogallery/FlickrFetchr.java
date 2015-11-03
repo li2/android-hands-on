@@ -8,6 +8,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -62,8 +72,32 @@ public class FlickrFetchr {
         }
     }
     
+    /*
+    getUrlBytes()在LG G3(5.1)可以正常工作，但在荣耀3c(4.2.2)上抛出如下异常：
+    java.net.SocketException: Socket is closed
+    at org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.checkOpen(OpenSSLSocketImpl.java:232)
+    at org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.startHandshake(OpenSSLSocketImpl.java:245)
+    at libcore.net.http.HttpConnection.setupSecureSocket(HttpConnection.java:209)
+    ... 修改为以下代码后，就可以下载xml文件了。但用到的API都是deprecated.
+     */
+    byte[] getUrlBytes2(String urlSpec) throws IOException {
+        HttpParams params = new BasicHttpParams();
+        HttpConnectionParams.setConnectionTimeout(params, 2000);
+        HttpConnectionParams.setSoTimeout(params, 20000);
+        HttpClient httpClient = new DefaultHttpClient(params);
+        HttpGet httpGet = new HttpGet(urlSpec);
+        HttpPost httpPost = new HttpPost(urlSpec);
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+        
+        if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            return null;
+        } else {
+            return EntityUtils.toByteArray(httpResponse.getEntity());
+        }
+    }
+    
     public String getUrl(String urlSpec) throws IOException {
-        return new String(getUrlBytes(urlSpec));
+        return new String(getUrlBytes2(urlSpec));
     }
     
     // Search和getRecent命令获取的xml格式一致，因此可以使用相同的代码解析。
@@ -119,10 +153,12 @@ public class FlickrFetchr {
                 String id = parser.getAttributeValue(null, "id");
                 String caption = parser.getAttributeValue(null, "title");
                 String smallUrl = parser.getAttributeValue(null, EXTRA_SMALL_URL);
+                String owner = parser.getAttributeValue(null, "owner");
                 GalleryItem item = new GalleryItem();
                 item.setId(id);
                 item.setCaption(caption);
                 item.setUrl(smallUrl);
+                item.setOwner(owner);
                 items.add(item);
             }
             
