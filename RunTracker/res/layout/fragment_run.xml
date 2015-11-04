@@ -1,16 +1,89 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 
+联合使用TableLayout与TableRow，可更容易地布置形成排列整齐的视图；代替嵌套使用LinearLayout。
+TableRow 子组件的行为方式类似于表里的单元格，同列元素具有相同的宽度。
+TableRow 组件无需声明高度和宽度的属性定义。
+-->
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="me.li2.android.runtracker.RunActivity" >
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+    <TableRow>
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingLeft="4dp"
+            android:text="@string/started" />
+        <TextView android:id="@+id/run_startedTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </TableRow>
+    
+    <TableRow>
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingLeft="4dp"
+            android:text="@string/latitude" />
+        <TextView android:id="@+id/run_latitudeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />        
+    </TableRow>
+    
+    <TableRow>
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingLeft="4dp"
+            android:text="@string/longitude" />
+        <TextView android:id="@+id/run_longitudeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />        
+    </TableRow>
 
-</RelativeLayout>
+    <TableRow>
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingLeft="4dp"
+            android:text="@string/altitude" />
+        <TextView android:id="@+id/run_altitudeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />        
+    </TableRow>
+    
+    <TableRow>
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingLeft="4dp"
+            android:text="@string/elapsed_time" />
+        <TextView android:id="@+id/run_durationTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />        
+    </TableRow>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        
+        <Button android:id="@+id/run_startButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/start" />
+        <Button android:id="@+id/run_stopButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/stop" />
+                
+    </LinearLayout>
+    
+</TableLayout>

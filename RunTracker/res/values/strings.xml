@@ -2,7 +2,15 @@
 <resources>
 
     <string name="app_name">RunTracker</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-
+    <string name="started">Started:</string>
+    <string name="latitude">Latitude:</string>
+    <string name="longitude">Longitude:</string>
+    <string name="altitude">Altitude:</string>
+    <string name="elapsed_time">Elapsed Time:</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="gps_enabled">GPS Enabled</string>
+    <string name="gps_disabled">GPS Disabled</string>
+    <string name="cell_text">Run at %1$s</string>
+    
 </resources>
