@@ -92,10 +92,37 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
         // 查询SQLiteDatabase返回一个Cursor实例，
         // Cursor将结果集看做是一系列的数据行和数据列，但仅支持String以及原始数据类型的值。
         // 而通过Cursor可以列出按日期排序的旅程列表；
+        // 第2个参数@columns: Passing null will return all columns, 所以也就包含_id列。
         // Equivalent to "select * from run order by start_date asc"
         Cursor wrapped = getReadableDatabase().query(TABLE_RUN,
                 null, null, null, null, null, COLUMN_RUN_START_DATE + " asc");
         return new RunCursor(wrapped);
+    }
+    
+    // 为在用户界面上显示已记录的旅程信息，还需查询数据库获取现有旅程的详细信息，
+    // 其中包括它的最近一次记录的地理位置信息。
+    public RunCursor queryRun(long id) {
+        Cursor wrapped = getReadableDatabase().query(TABLE_RUN,
+                null, // All columns
+                COLUMN_RUN_ID + " = ?", // Look for a run ID（获取所有数据，通过ID列过滤）
+                new String[]{ String.valueOf(id) }, // with this value
+                null, // group by
+                null, // having
+                null, // order by
+                "1"); // limit 1 row
+        return new RunCursor(wrapped);
+    }
+    
+    public LocationCursor queryLastLocationForRun(long runId) {
+        Cursor wrapped = getReadableDatabase().query(TABLE_LOCATION,
+                null,
+                COLUMN_LOCATION_RUN_ID + " = ?", // limit to the given run
+                new String[]{ String.valueOf(runId) },
+                null,
+                null,
+                COLUMN_LOCATION_TIMESTAMP + " desc", // order by latest first
+                "1");
+        return new LocationCursor(wrapped);
     }
     
     // 我们习惯于使用对象来封装模型层数据，如Run和Location对象。
@@ -120,6 +147,31 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
             run.setId(runId);
             run.setStartDate(new Date(startDate));
             return run;
+        }
+    }
+    
+    public static class LocationCursor extends CursorWrapper {
+
+        public LocationCursor(Cursor cursor) {
+            super(cursor);
+        }
+        
+        public Location getLastLocation() {
+            if (isBeforeFirst() || isAfterLast()) {
+                return null;
+            }
+            double latitude = getDouble(getColumnIndex(COLUMN_LOCATION_LATITUDE));
+            double longitude = getDouble(getColumnIndex(COLUMN_LOCATION_LONGITUDE));
+            double altitude = getDouble(getColumnIndex(COLUMN_LOCATION_ALTITUDE));
+            String provider = getString(getColumnIndex(COLUMN_LOCATION_PROVIDER));
+            long timestamp = getLong(getColumnIndex(COLUMN_LOCATION_TIMESTAMP));
+            
+            Location loc = new Location(provider);
+            loc.setLatitude(latitude);
+            loc.setLongitude(longitude);
+            loc.setAltitude(altitude);
+            loc.setTime(timestamp);
+            return loc;
         }
     }
 }

@@ -1,5 +1,6 @@
 package me.li2.android.runtracker;
 
+import me.li2.android.runtracker.RunDatabaseHelper.LocationCursor;
 import me.li2.android.runtracker.RunDatabaseHelper.RunCursor;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -99,6 +100,10 @@ public class RunManager {
         return getLocationPendingIntent(false) != null;
     }
     
+    public boolean isTrackingRun(Run run) {
+        return run != null && run.getId() == mCurrentRunId;
+    }
+    
     private void broadcastLocation(Location location) {
         Intent broadcast = new Intent(ACTION_LOCATION);
         broadcast.putExtra(LocationManager.KEY_LOCATION_CHANGED, location);
@@ -138,11 +143,35 @@ public class RunManager {
         return mDatabaseHelper.queryRuns();
     }
     
+    public Run getRun(long id) {
+        Run run = null;
+        RunCursor cursor = mDatabaseHelper.queryRun(id);
+        // 先移到第一行，如果有数据，isAfterLast()返回false.
+        cursor.moveToFirst();
+        if (!cursor.isAfterLast()) {
+            run = cursor.getRun();
+        }
+        // 便于数据库尽快从内存中释放与cursor相关联的资源。
+        cursor.close();
+        return run;
+    }
+    
     public void insertLocation(Location location) {
         if (mCurrentRunId != -1) {
             mDatabaseHelper.insertLocation(mCurrentRunId, location);
         } else {
             Log.e(TAG, "Location received with no tracking run; ignoring.");
         }
+    }
+    
+    public Location getLatestLocation(long runId) {
+        Location location = null;
+        LocationCursor cursor = mDatabaseHelper.queryLastLocationForRun(runId);
+        cursor.moveToFirst();
+        if (!cursor.isAfterLast()) {
+            location = cursor.getLastLocation();
+        }
+        cursor.close();
+        return location;
     }
 }

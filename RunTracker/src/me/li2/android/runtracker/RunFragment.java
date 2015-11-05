@@ -15,10 +15,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class RunFragment extends Fragment {
+    private static final String ARG_RUN_ID = "RUN_ID";
 
     private BroadcastReceiver mLocationReceiver = new LocationReceiver() {
         @Override
         protected void onLocationReceived(Context context, Location loc) {
+            if (!mRunManager.isTrackingRun(mRun)) {
+                return;
+            }
             mLastLocation = loc;
             if (isVisible()) {
                 updateUI();
@@ -39,11 +43,30 @@ public class RunFragment extends Fragment {
     private Button mStartBtn, mStopBtn;
     private TextView mStartedTv, mLatitudeTv, mLongitudeTv, mAltitudeTv, mDurationTv;
     
+    public static RunFragment newInstance(long runId) {
+        Bundle args = new Bundle();
+        args.putLong(ARG_RUN_ID, runId);
+        RunFragment fragment = new RunFragment();
+        fragment.setArguments(args);
+        return fragment;
+    }
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         mRunManager = RunManager.get(getActivity());
+        
+        // Check for a Run ID as an argument, and find the run
+        Bundle args = getArguments();
+        if (args != null) {
+            long runId = args.getLong(ARG_RUN_ID, -1);
+            if (runId != -1) {
+                // 从数据库中加载当前旅程的最近一次地理位置信息，以在界面上显示。
+                mRun = mRunManager.getRun(runId);
+                mLastLocation = mRunManager.getLatestLocation(runId);
+            }
+        }
     }
     
     @Override
@@ -60,7 +83,11 @@ public class RunFragment extends Fragment {
         mStartBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                mRun = mRunManager.startNewRun();
+                if (mRun == null) {
+                    mRun = mRunManager.startNewRun();
+                } else {
+                    mRunManager.startTrackingRun(mRun);
+                }
                 updateUI();
             }
         });
@@ -91,6 +118,7 @@ public class RunFragment extends Fragment {
     
     private void updateUI() {
         boolean started = mRunManager.isTrackingRun();
+        boolean trackingThisRun = mRunManager.isTrackingRun(mRun);
         
         if (mRun != null) {
             mStartedTv.setText(mRun.getStartDate().toString());
@@ -106,6 +134,6 @@ public class RunFragment extends Fragment {
         mDurationTv.setText(Run.formatDuration(durationSeconds));
         
         mStartBtn.setEnabled(!started);
-        mStopBtn.setEnabled(started);
+        mStopBtn.setEnabled(started && trackingThisRun);
     }
 }

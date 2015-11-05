@@ -13,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class RunListFragment extends ListFragment {
@@ -61,6 +62,18 @@ public class RunListFragment extends ListFragment {
             mCursor.requery();
             ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
         }
+    }
+    
+    // 在RunListFragment中响应列表项选择，使用已选旅程ID启动RunActivity
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        // The id argument will be the Run ID; CursorAdapter gives up this for free
+        // 因为我们指定了run_id表中的ID字段， CursorAdapter检测到该字段并将其作为id参数传递给了onListItemClick().
+        // The Cursor must include a column named "_id" or CursorAdapter will not work.
+        // 所以此处的 @id 就是run的id
+        Intent intent = new Intent(getActivity(), RunActivity.class);
+        intent.putExtra(RunActivity.EXTRA_RUN_ID, id);
+        startActivity(intent);
     }
     
     // CursorAdapter: adapter that exposes data from a Cursor to a ListView widget.
