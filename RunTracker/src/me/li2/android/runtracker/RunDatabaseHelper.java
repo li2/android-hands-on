@@ -1,7 +1,11 @@
 package me.li2.android.runtracker;
 
+import java.util.Date;
+
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.CursorWrapper;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
@@ -32,6 +36,7 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
     private static final int VERSION = 1;
     
     private static final String TABLE_RUN = "run";
+    private static final String COLUMN_RUN_ID = "_id";
     private static final String COLUMN_RUN_START_DATE = "start_date";
     
     private static final String TABLE_LOCATION = "location";
@@ -81,6 +86,41 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LOCATION_PROVIDER, location.getProvider());
         cv.put(COLUMN_LOCATION_RUN_ID, runId);
         return getWritableDatabase().insert(TABLE_LOCATION, null, cv);
+    }
+    
+    public RunCursor queryRuns() {
+        // 查询SQLiteDatabase返回一个Cursor实例，
+        // Cursor将结果集看做是一系列的数据行和数据列，但仅支持String以及原始数据类型的值。
+        // 而通过Cursor可以列出按日期排序的旅程列表；
+        // Equivalent to "select * from run order by start_date asc"
+        Cursor wrapped = getReadableDatabase().query(TABLE_RUN,
+                null, null, null, null, null, COLUMN_RUN_START_DATE + " asc");
+        return new RunCursor(wrapped);
+    }
+    
+    // 我们习惯于使用对象来封装模型层数据，如Run和Location对象。
+    // 既然我们已经有了代表对象的数据库表，如果能从Cursor中取得这些对象的实例就再好不过了。
+    // 为实现以上目标，我们将继承类CursorWrapper（用于封装当前的Cursor类， 并转发所有的方法调用给它）：
+    // A convenience class to wrap a cursor that returns rows from the "run" table.
+    // The {@link getRun()} method will give you a Run instance representing the current row.
+    public static class RunCursor extends CursorWrapper {
+        public RunCursor(Cursor cursor) {
+            super(cursor);
+        }
+        
+        // Returns a Run object configured for the current row,
+        // or null if the current row is invalid.
+        public Run getRun() {
+            if (isBeforeFirst() || isAfterLast()) {
+                return null;
+            }
+            long runId = getLong(getColumnIndex(COLUMN_RUN_ID));
+            long startDate = getLong(getColumnIndex(COLUMN_RUN_START_DATE));
+            Run run = new Run();
+            run.setId(runId);
+            run.setStartDate(new Date(startDate));
+            return run;
+        }
     }
 }
 /*

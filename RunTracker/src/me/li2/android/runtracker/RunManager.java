@@ -1,5 +1,6 @@
 package me.li2.android.runtracker;
 
+import me.li2.android.runtracker.RunDatabaseHelper.RunCursor;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -131,6 +132,10 @@ public class RunManager {
         Run run = new Run();
         run.setId(mDatabaseHelper.insertRun(run));
         return run;
+    }
+    
+    public RunCursor queryRuns() {
+        return mDatabaseHelper.queryRuns();
     }
     
     public void insertLocation(Location location) {
