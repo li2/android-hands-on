@@ -4,10 +4,21 @@ import java.util.Date;
 import java.util.Locale;
 
 public class Run {
+    // 为了从数据库中查询Run，为其添加ID属性，为插入数据库时返回的长整型值。
+    private long mId;
     private Date mStartDate;
     
     public Run() {
+        mId = -1;
         mStartDate = new Date();
+    }
+    
+    public long getId() {
+        return mId;
+    }
+    
+    public void setId(long id) {
+        mId = id;
     }
     
     public Date getStartDate() {

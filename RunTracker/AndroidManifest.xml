@@ -27,13 +27,13 @@
             </intent-filter>
         </activity>
         
-        <receiver android:name=".LocationReceiver"
+        <receiver android:name=".TrackingLocationReceiver"
             android:exported="false" >
             <intent-filter>
                 <action android:name="me.li2.android.runtracker.ACTION_LOCATION" />
-            </intent-filter>                
+            </intent-filter>          
         </receiver>
-                
+        
     </application>
 
 </manifest>
