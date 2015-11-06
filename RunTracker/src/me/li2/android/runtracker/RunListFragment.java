@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,32 +18,41 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class RunListFragment extends ListFragment {
+public class RunListFragment extends ListFragment implements LoaderCallbacks<Cursor> {
     private static final int REQUEST_NEW_RUN = 0;
     
-    private RunCursor mCursor;
+//    private RunCursor mCursor;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        // Query the list of runs
-        mCursor = RunManager.get(getActivity()).queryRuns();
-        // Create an adapter to point at this cursor
-        RunCursorAdapter adapter = new RunCursorAdapter(getActivity(), mCursor);
-        setListAdapter(adapter);
+//        // Query the list of runs
+//        mCursor = RunManager.get(getActivity()).queryRuns();
+//        // Create an adapter to point at this cursor
+//        RunCursorAdapter adapter = new RunCursorAdapter(getActivity(), mCursor);
+//        setListAdapter(adapter);
+        
+        // 在onCreate()和onDestroy()中加载/关闭cursor，意味着数据库查询是在主线程（ UI）上执行，
+        // 在极端情况下甚至会引发糟糕的ANR（应用无响应），所以改用Loader将数据库查询转移到后台运行。
+        
+        // Initialize the loader to load the list of runs
+        // LoaderManager 管理着与loader间的所有通讯， 并负责启动、 停止和管理与组件关联的Loader生命周期方法。
+        // 在Activity或Fragment中，我们可使用 getLoaderManager() 方法返回一个实例并与之交互。
+        getLoaderManager().initLoader(0, null, this);
     }
     
-    @Override
-    public void onDestroy() {
-        mCursor.close();
-        super.onDestroy();
-    }
+//    @Override
+//    public void onDestroy() {
+//        mCursor.close();
+//        super.onDestroy();
+//    }
     
     @Override
     public void onResume() {
         super.onResume();
-        ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+//        ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+        getLoaderManager().restartLoader(0, null, this);
     }
     
     @Override
@@ -65,8 +76,10 @@ public class RunListFragment extends ListFragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (REQUEST_NEW_RUN == requestCode) {
-            mCursor.requery();
-            ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+//            mCursor.requery();
+//            ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+            // Restart th loader to get any new run available
+            getLoaderManager().restartLoader(0, null, this);
         }
     }
     
@@ -80,6 +93,41 @@ public class RunListFragment extends ListFragment {
         Intent intent = new Intent(getActivity(), RunActivity.class);
         intent.putExtra(RunActivity.EXTRA_RUN_ID, id);
         startActivity(intent);
+    }
+    
+    private static class RunListCursorLoader extends SQLiteCursorLoader {
+        public RunListCursorLoader(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected Cursor loadCursor() {
+            // Query the list of runs
+            return RunManager.get(getContext()).queryRuns();
+        }
+    }
+    
+    // 我们调用LoaderManager.initLoader()时，最终调用了onCreateLoader(int, Bundle)方法，
+    // 因此我们需要覆写这个接口方法，以创建loader，如果有多个相同类型的loader，可使用id参数区分它们。
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        // You only ever load the runs, so assume this is the case
+        return new RunListCursorLoader(getActivity());
+    }
+    
+    // 数据在后台加载完后， onLoadFinished(Loader<Cursor>, Cursor)就会在主线程上被调用。
+    // 因此我们需要覆写这个接口方法，创建一个指向新cursor的CursorAdapter。
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        // Create an adapter to point at this cursor
+        RunCursorAdapter adapter = new RunCursorAdapter(getActivity(), (RunCursor)cursor);
+        setListAdapter(adapter);
+    }
+    
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        // Stop using the cursor (via the adapter)
+        setListAdapter(null);
     }
     
     // CursorAdapter: adapter that exposes data from a Cursor to a ListView widget.
