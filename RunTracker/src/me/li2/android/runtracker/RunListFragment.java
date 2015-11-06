@@ -39,6 +39,12 @@ public class RunListFragment extends ListFragment {
     }
     
     @Override
+    public void onResume() {
+        super.onResume();
+        ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+    }
+    
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.run_list_options, menu);
@@ -109,6 +115,14 @@ public class RunListFragment extends ListFragment {
             TextView startDateTextView = (TextView) view;
             String cellText = context.getString(R.string.cell_text, run.getStartDate());
             startDateTextView.setText(cellText);
+            
+            // 通过区别于其它列表项的颜色来识别当前跟踪的旅程。
+            boolean trackingThisRun = RunManager.get(context).isTrackingRun(run);
+            if (trackingThisRun) {
+                view.setBackgroundColor(context.getResources().getColor(android.R.color.darker_gray));
+            } else {
+                view.setBackgroundResource(0);
+            }
         }
     }
 }
