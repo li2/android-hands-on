@@ -51,8 +51,9 @@ public class RunListFragment extends ListFragment implements LoaderCallbacks<Cur
     @Override
     public void onResume() {
         super.onResume();
+//      getLoaderManager().restartLoader(0, null, this);
+        // 并不需要读取数据库数据，所以不要调用 restartLoader，只需要刷新界面以维护高亮条目。
 //        ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
-        getLoaderManager().restartLoader(0, null, this);
     }
     
     @Override
