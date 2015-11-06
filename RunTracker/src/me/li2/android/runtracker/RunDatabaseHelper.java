@@ -125,6 +125,17 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
         return new LocationCursor(wrapped);
     }
     
+    public LocationCursor queryLocationsForRun(long runId) {
+        Cursor wrapped = getReadableDatabase().query(TABLE_LOCATION,
+                null,
+                COLUMN_LOCATION_RUN_ID + " = ?", // limit to the given run
+                new String[]{ String.valueOf(runId) },
+                null,
+                null,
+                COLUMN_LOCATION_TIMESTAMP + " desc"); // order by latest first
+        return new LocationCursor(wrapped);
+    }
+    
     // 我们习惯于使用对象来封装模型层数据，如Run和Location对象。
     // 既然我们已经有了代表对象的数据库表，如果能从Cursor中取得这些对象的实例就再好不过了。
     // 为实现以上目标，我们将继承类CursorWrapper（用于封装当前的Cursor类， 并转发所有的方法调用给它）：
