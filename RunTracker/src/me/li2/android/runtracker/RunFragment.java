@@ -2,6 +2,7 @@ package me.li2.android.runtracker;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Bundle;
@@ -45,7 +46,7 @@ public class RunFragment extends Fragment {
     private Location mLastLocation;
     private RunManager mRunManager;
     
-    private Button mStartBtn, mStopBtn;
+    private Button mStartBtn, mStopBtn, mMapBtn;
     private TextView mStartedTv, mLatitudeTv, mLongitudeTv, mAltitudeTv, mDurationTv;
     
     public static RunFragment newInstance(long runId) {
@@ -109,6 +110,16 @@ public class RunFragment extends Fragment {
             }
         });
         
+        mMapBtn = (Button) v.findViewById(R.id.run_mapButton);
+        mMapBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), RunMapActivity.class);
+                i.putExtra(RunMapActivity.EXTRA_RUN_ID, mRun.getId());
+                startActivity(i);
+            }
+        });
+        
         return v;
     }
     
@@ -138,6 +149,9 @@ public class RunFragment extends Fragment {
             mLatitudeTv.setText(Double.toString(mLastLocation.getLatitude()));
             mLongitudeTv.setText(Double.toString(mLastLocation.getLongitude()));
             mAltitudeTv.setText(Double.toString(mLastLocation.getAltitude()));
+            mMapBtn.setEnabled(true);
+        } else {
+            mMapBtn.setEnabled(false);
         }
         mDurationTv.setText(Run.formatDuration(durationSeconds));
         

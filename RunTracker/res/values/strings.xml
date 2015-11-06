@@ -13,5 +13,10 @@
     <string name="gps_disabled">GPS Disabled</string>
     <string name="cell_text">Run at %1$s</string>
     <string name="new_run">New Run</string>
+    <string name="map">Map</string>
+    <string name="run_start">Run Start</string>
+    <string name="run_started_at_format">Run started at %s</string>
+    <string name="run_finish">Run Finish</string>
+    <string name="run_finished_at_format">Run finished at %s</string>
     
 </resources>

@@ -8,9 +8,21 @@
         android:minSdkVersion="11"
         android:targetSdkVersion="21" />
     
+    <permission android:name="me.li2.android.runtracker.permission.MAPS_RECEIVE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="me.li2.android.runtracker.permission.MAPS_RECEIVE" />
+    
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>    
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
     <uses-feature android:required="true"
         android:name="android.hardware.location.gps" />
+    <uses-feature android:required="true"
+        android:glEsVersion="0x00020000" />
     
     <application
         android:allowBackup="true"
@@ -29,6 +41,9 @@
         <activity
             android:name=".RunActivity"
             android:label="@string/app_name" />
+        <activity
+            android:name=".RunMapActivity"
+            android:label="@string/app_name" />
         
         <receiver android:name=".TrackingLocationReceiver"
             android:exported="false" >
@@ -37,6 +52,13 @@
             </intent-filter>          
         </receiver>
         
+        <!-- https://developers.google.com/maps/documentation/android-api/start -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="" />        
+        <meta-data android:name="com.google.android.gms.version" 
+           android:value="@integer/google_play_services_version" />
+                
     </application>
 
 </manifest>
