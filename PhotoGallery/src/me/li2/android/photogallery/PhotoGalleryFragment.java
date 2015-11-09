@@ -131,6 +131,10 @@ public class PhotoGalleryFragment extends VisibleFragment {
             
             // 然后将相关信息通知给SearchView。
             searchView.setSearchableInfo(searchableInfo);
+            
+            // Expand and give focus to SearchView automatically
+            // http://stackoverflow.com/a/11710098/2722270
+            searchView.setIconifiedByDefault(false);
         }
     }
     
