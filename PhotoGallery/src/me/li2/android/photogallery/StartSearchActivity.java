@@ -3,6 +3,9 @@ package me.li2.android.photogallery;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,5 +31,22 @@ public class StartSearchActivity extends FragmentActivity {
                 startActivity(new Intent(StartSearchActivity.this, PhotoGalleryActivity.class));
             }
         });
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_start_search_activity, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+    
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.menu_item_search:
+            startActivity(new Intent(StartSearchActivity.this, PhotoGalleryActivity.class));        
+            return true;
+        }
+        return super.onMenuItemSelected(featureId, item);
     }
 }
