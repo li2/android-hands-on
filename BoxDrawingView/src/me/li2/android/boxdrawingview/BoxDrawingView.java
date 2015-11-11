@@ -6,7 +6,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.os.Parcel;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -105,63 +105,34 @@ public class BoxDrawingView extends View {
         return true;
     }
     
+    // 使用Bundle在设备旋转时保存数据。
     // prevent custom views from losing state across screen orientation changes
-    // http://stackoverflow.com/a/3542895/2722270
-    static class BoxDrawingState extends BaseSavedState {
-        Box currentBox;
-        ArrayList<Box> boxes;
-        
-        BoxDrawingState(Parcelable superState) {
-            super(superState);
-        }
-        
-        private BoxDrawingState(Parcel in) {
-            super(in);
-            currentBox = (Box)in.readValue(null);
-            in.readList(boxes, null);
-        }
-        
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            super.writeToParcel(out, flags);
-            out.writeValue(currentBox);
-            out.writeList(boxes);
-        }
-        
-        @Override
-        public String toString() {
-            return "BoxDrawingView.SavedState{"
-                    + Integer.toHexString(System.identityHashCode(this))
-                    + "  Boxes=" + boxes + "}";
-        }
-        
-        Parcelable.Creator<BoxDrawingState> CREATOR = new Parcelable.Creator<BoxDrawingState>() {
-            @Override
-            public BoxDrawingState createFromParcel(Parcel in) {
-                return new BoxDrawingState(in);
-            }
-            
-            @Override
-            public BoxDrawingState[] newArray(int size) {
-                return new BoxDrawingState[size];
-            }
-        };
-    }
+    // http://stackoverflow.com/a/8127813/2722270
+    
+    // RuntimeException: Unable to start activity ComponentInfo{.DragAndDraw}:
+    // java.lang.IllegalArgumentException: Wrong state class, expecting View State but received class Bundle instead.
+    // This usually happens when two views of different type have the same id in the same hierarchy.
+    
+    private static final String PARCEL_KEY_STATE = "instanceState";
+    private static final String PARCEL_KEY_BOXES = "boxes";
     
     @Override
     protected Parcelable onSaveInstanceState() {
-        Parcelable superState = super.onSaveInstanceState();
-        BoxDrawingState boxDrawingState = new BoxDrawingState(superState);
-        boxDrawingState.currentBox = mCurrentBox;
-        boxDrawingState.boxes = mBoxes;
-        return boxDrawingState;
+        super.onSaveInstanceState();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(PARCEL_KEY_STATE, super.onSaveInstanceState());
+        bundle.putParcelableArrayList(PARCEL_KEY_BOXES, mBoxes);
+        return bundle;
     }
     
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        BoxDrawingState boxDrawingState = (BoxDrawingState) state;
-        super.onRestoreInstanceState(boxDrawingState.getSuperState());
-        mCurrentBox = boxDrawingState.currentBox;
-        mBoxes = boxDrawingState.boxes;
+        if (state instanceof Bundle) {
+            Bundle bundle = (Bundle)state;
+            mBoxes = bundle.getParcelableArrayList(PARCEL_KEY_BOXES);
+            // 如果没有下面这行代码，将导致 IllegalArgumentException.
+            state = bundle.getParcelable(PARCEL_KEY_STATE);
+        }
+        super.onRestoreInstanceState(state);
     }
 }
