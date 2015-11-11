@@ -6,12 +6,15 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 
 
-public class BoxDrawingView extends android.view.View {
+public class BoxDrawingView extends View {
     public static final String TAG = "BoxDrawingView";
     
     private Box mCurrentBox;
@@ -100,5 +103,65 @@ public class BoxDrawingView extends android.view.View {
         }
         
         return true;
+    }
+    
+    // prevent custom views from losing state across screen orientation changes
+    // http://stackoverflow.com/a/3542895/2722270
+    static class BoxDrawingState extends BaseSavedState {
+        Box currentBox;
+        ArrayList<Box> boxes;
+        
+        BoxDrawingState(Parcelable superState) {
+            super(superState);
+        }
+        
+        private BoxDrawingState(Parcel in) {
+            super(in);
+            currentBox = (Box)in.readValue(null);
+            in.readList(boxes, null);
+        }
+        
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+            out.writeValue(currentBox);
+            out.writeList(boxes);
+        }
+        
+        @Override
+        public String toString() {
+            return "BoxDrawingView.SavedState{"
+                    + Integer.toHexString(System.identityHashCode(this))
+                    + "  Boxes=" + boxes + "}";
+        }
+        
+        Parcelable.Creator<BoxDrawingState> CREATOR = new Parcelable.Creator<BoxDrawingState>() {
+            @Override
+            public BoxDrawingState createFromParcel(Parcel in) {
+                return new BoxDrawingState(in);
+            }
+            
+            @Override
+            public BoxDrawingState[] newArray(int size) {
+                return new BoxDrawingState[size];
+            }
+        };
+    }
+    
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable superState = super.onSaveInstanceState();
+        BoxDrawingState boxDrawingState = new BoxDrawingState(superState);
+        boxDrawingState.currentBox = mCurrentBox;
+        boxDrawingState.boxes = mBoxes;
+        return boxDrawingState;
+    }
+    
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        BoxDrawingState boxDrawingState = (BoxDrawingState) state;
+        super.onRestoreInstanceState(boxDrawingState.getSuperState());
+        mCurrentBox = boxDrawingState.currentBox;
+        mBoxes = boxDrawingState.boxes;
     }
 }
