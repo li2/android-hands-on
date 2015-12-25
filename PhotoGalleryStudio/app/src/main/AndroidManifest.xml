@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="me.li2.android.photogallery"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="11"
+        android:targetSdkVersion="21" />
+    
+    <!-- Private Permission：使用dynamic broadcast receiver存在一个问题，系统中的任何应用都可以监听broadcast
+    , 或者触发这个receiver. 为防止被未授权的App使用，可以创建自己的安全许可，用来控制other package访问
+    , your package的components/features.
+    , 自定义permission必须设置属性protectionLevel，Android根据该属性值确定自定义权限的使用方式。
+    , signature安全级别表明，如果其它App需要使用我们自定义的权限，则必须使用和当前应用相同的key做签名认证。
+    , 既然其它App并没有相同的key，也就无法触碰被权限保护的东西。
+    , 因此，对于仅限应用内部使用的权限，通常选择signature. -->
+    <permission android:name="me.li2.android.photogallery.PRIVATE"
+        android:protectionLevel="signature" />
+    
+    <!-- The "uses-permission" tag requests a "permission" that the 
+        containing package must be granted in order for it to operate 
+        correctly. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 允许app接收系统启动完成后的广播消息，这里有个坑，手机设置中有“开机自启动项”，app被禁止了 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="me.li2.android.photogallery.PRIVATE"/>
+    
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        
+        <!-- 使Activity支持搜索的配置文件之2：
+        (1) 更改Activity的启动模式为singleTop： 如果activity实例已经处在回退栈的顶端，则直接传递intent给它，而不是新建activity；
+        (2) 添加intent filter，以声明activity可以接收search intent：Intent.ACTION_SEARCH；
+        (3) 添加元数据标签，以关联搜索配置文件searchable.xml和目标activity。
+        [总结] 以上配置通知Android SearchManager，activity可以处理搜索任务，并同时把搜索配置信息提供给activity。
+        SearchManager是系统级服务，负责展现搜索对话框，并管理搜索相关的交互。-->
+        <activity
+            android:name=".PhotoGalleryActivity"
+            android:launchMode="singleTop"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+        </activity>
+        
+        <!-- Lists configuration changes that the activity will handle itself
+        , 如果设备配置改变（键盘隐藏、屏幕方向改变、屏幕大小改变 ），那么Activity将自己处理配置更改，
+        , 无需销毁并重建Activity，这样屏幕旋转时，就不必重新加载Url -->
+        <activity android:name=".PhotoPageActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize" />
+        
+        <!-- 登记service -->
+        <service android:name=".PollService" />
+        
+        <!-- 登记receiver，及相应的intent -->
+        <receiver android:name=".StartupReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

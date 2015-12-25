@@ -1,0 +1,29 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="me.li2.android.photogallery.PhotoGalleryActivity" >
+
+    <!-- Honeycomb(Android 3.0.x, API=11) 新增加了SearchView类，
+    - 它属于操作视图（action view）,可内置于action bar.
+    - 因此，SearchView的界面使用了和应用完全一致的样式和主题；
+    - 要使用操作视图，只需要在菜单项中增加一个属性 android:actionViewClass
+    - 相当于告诉android “不要在操作栏对此菜单项使用常规视图，请使用指定视图”。
+    - 但SearchView不会调用到onOptionsItemSelected()回调方法 。-->
+    <item
+        android:id="@+id/menu_item_search"
+        android:title="@string/search"
+        android:icon="@android:drawable/ic_menu_search"
+        android:showAsAction="ifRoom"
+        android:actionViewClass="android.widget.SearchView" />
+    
+    <item
+        android:id="@+id/menu_item_clear"
+        android:title="@string/clear_search"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:showAsAction="ifRoom" />
+    
+    <item android:id="@+id/menu_item_toggle_polling"
+        android:title="@string/start_polling"
+        android:showAsAction="ifRoom" />
+
+</menu>
