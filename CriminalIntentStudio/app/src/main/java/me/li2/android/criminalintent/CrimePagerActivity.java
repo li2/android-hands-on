@@ -1,8 +1,5 @@
 package me.li2.android.criminalintent;
 
-import java.util.ArrayList;
-import java.util.UUID;
-
 import android.app.ActionBar;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -12,17 +9,19 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.List;
+import java.util.UUID;
+
 public class CrimePagerActivity  extends FragmentActivity 
     implements CrimeFragment.Callbacks {
     
     private ViewPager mViewPager;
-    private ArrayList<Crime>mCrimes;
+    private List<Crime> mCrimes;
     private TextView mActionBarTitle;
     
     @Override

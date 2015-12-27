@@ -1,5 +1,12 @@
 package me.li2.android.criminalintent;
 
+import android.content.Context;
+import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONTokener;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,13 +16,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONTokener;
-
-import android.content.Context;
-import android.util.Log;
+import java.util.List;
 
 public class CriminalIntentJSONSerializer {
     private static final String TAG = "CriminalIntentJSONSerializer";
@@ -73,7 +74,7 @@ public class CriminalIntentJSONSerializer {
         return crimes;
     }
     
-    public void saveCrimes(ArrayList<Crime> crimes) throws JSONException, IOException {
+    public void saveCrimes(List<Crime> crimes) throws JSONException, IOException {
         // Build an array in JSON
         JSONArray array = new JSONArray();
         for (Crime c : crimes) {

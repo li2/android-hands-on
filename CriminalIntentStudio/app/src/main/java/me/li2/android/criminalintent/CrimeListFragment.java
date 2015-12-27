@@ -1,13 +1,13 @@
 package me.li2.android.criminalintent;
 
-import java.util.ArrayList;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -18,18 +18,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView.MultiChoiceModeListener;
-import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.ListView;
 import android.widget.TextView;
 
-public class CrimeListFragment extends ListFragment{
+import java.util.List;
+
+public class CrimeListFragment extends Fragment {
     private static final String TAG = "CrimeListFragment";
     private static final int REQUEST_CRIME = 1;
-    private ArrayList<Crime> mCrimes;
+    private List<Crime> mCrimes;
     private boolean mSubtitleVisible;
     private Callbacks mCallbacks;
+    private CrimeAdapter mCrimeAdapter;
+    private RecyclerView mCrimeRecyclerView;
     
     // Required interface for hosting activities.
     public interface Callbacks {
@@ -41,13 +42,9 @@ public class CrimeListFragment extends ListFragment{
         super.onCreate(savedInstanceState);
         // let the FragmentManager know that CrimeListFragment needs to receive options menu callbacks.
         setHasOptionsMenu(true);
-        
+
         getActivity().setTitle(R.string.crimes_title);
-        mCrimes = CrimeLab.get(getActivity()).getCrimes();
-        
-        CrimeAdapter adapter = new CrimeAdapter(mCrimes);
-        setListAdapter(adapter);
-        
+
         setRetainInstance(true);
         mSubtitleVisible = false;
     }
@@ -55,34 +52,26 @@ public class CrimeListFragment extends ListFragment{
     @TargetApi(11)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
-       View v = super.onCreateView(inflater, parent, savedInstanceState);
+       View view = inflater.inflate(R.layout.fragment_crime_list, parent, false);
        
        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
            if (mSubtitleVisible) {
                getActivity().getActionBar().setSubtitle(R.string.subtitle);
            }
        }
-       
-       // 使用android.R.id.list资源ID获取ListFragment管理着的ListView
-       ListView listView = (ListView) v.findViewById(android.R.id.list);
-       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-           // Use floating context menus on Froyo and Gingerbread
-           // By default, a long-press on a view does not trigger the creation of a context menu.
-           // Must register a view for a floating context menu by calling the following Fragment method:
-           registerForContextMenu(listView);
-       } else {
-           // Use contextual action bar on Honeycomb and higher
-           // 所谓Contextual Action Mode(上下文操作模式)，菜单项会覆盖操作栏.
-           listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-           listView.setMultiChoiceModeListener(mMultiChoiceClickListener);
-       }
-       return v;
+
+       mCrimeRecyclerView = (RecyclerView) view.findViewById(R.id.crime_recycler_view);
+       mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+       updateUI();
+
+       return view;
     }
     
     @Override
     public void onResume() {
         super.onResume();
-        ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+        updateUI();
     }
 
     @Override
@@ -100,24 +89,17 @@ public class CrimeListFragment extends ListFragment{
     }
 
     public void updateUI() {
-        ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+        CrimeLab crimeLab = CrimeLab.get(getActivity());
+        List<Crime> crimes = crimeLab.getCrimes();
+
+        if (mCrimeAdapter == null) {
+            mCrimeAdapter = new CrimeAdapter(crimes);
+            mCrimeRecyclerView.setAdapter(mCrimeAdapter);
+        } else {
+            mCrimeAdapter.notifyDataSetChanged();
+        }
     }
 
-    @Override
-    public void onListItemClick(ListView l, View v, int position, long id) {
-        Crime crime = ((CrimeAdapter) l.getAdapter()).getItem(position);
-        // 定义fragment的Callbacks，委托fragment的“托管activity”完成具体的工作，
-        // 以此保证fragment作为独立的开发构件，而不必知道其“托管activity”是如何工作的。
-        // “托管activity”要做的事情是：
-        // 针对平板，把CrimeFragment添加到detailFragmentContainer；针对手机，把启动CrimePagerActivity.
-        mCallbacks.onCrimeSelected(crime);
-        // 因此需要删除以下代码。
-        // Start CrimePagerActivity with this crime
-        // Intent i = new Intent(getActivity(), CrimePagerActivity.class);
-        // i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
-        // startActivityForResult(i, REQUEST_CRIME);
-    }
-    
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CRIME) {
@@ -141,7 +123,7 @@ public class CrimeListFragment extends ListFragment{
         case R.id.menu_item_new_crime:
             Crime crime = new Crime();
             CrimeLab.get(getActivity()).addCrime(crime);
-            ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+            ((CrimeAdapter)mCrimeRecyclerView.getAdapter()).notifyDataSetChanged();
             mCallbacks.onCrimeSelected(crime);
             return true;
         case R.id.menu_item_show_subtitle:
@@ -167,20 +149,6 @@ public class CrimeListFragment extends ListFragment{
     
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        int position = info.position;
-        CrimeAdapter adapter = (CrimeAdapter) getListAdapter();
-        Crime crime = adapter.getItem(position);
-        
-        switch (item.getItemId()) {
-        case R.id.menu_item_delete_crime:
-            CrimeLab.get(getActivity()).deleteCrime(crime);
-            CrimeLab.get(getActivity()).saveCrimes();
-            // The content of the adapter has changed but ListView did not receive a notification.
-            // Make sure the content of your adapter is not modified from a background thread, but only from the UI thread.
-            adapter.notifyDataSetChanged();
-            return true;
-        }
         return super.onContextItemSelected(item);
     }
     
@@ -208,16 +176,6 @@ public class CrimeListFragment extends ListFragment{
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
             switch (item.getItemId()) {
             case R.id.menu_item_delete_crime:
-                CrimeAdapter adapter = (CrimeAdapter) getListAdapter();
-                CrimeLab crimeLab = CrimeLab.get(getActivity());
-                for (int i = adapter.getCount() - 1; i >= 0; i--) {
-                    if (getListView().isItemChecked(i)) {
-                        crimeLab.deleteCrime(adapter.getItem(i));
-                    }
-                }
-                crimeLab.saveCrimes();
-                mode.finish();
-                adapter.notifyDataSetChanged();
                 return true;
             default:
                 return false;
@@ -230,31 +188,65 @@ public class CrimeListFragment extends ListFragment{
         }
     };
     
-    private class CrimeAdapter extends ArrayAdapter<Crime> {
-        public CrimeAdapter(ArrayList<Crime> crimes) {
-            super(getActivity(), 0, crimes);
+    private class CrimeAdapter extends RecyclerView.Adapter<CrimeHolder> {
+        private List<Crime> mCrimes;
+        public CrimeAdapter(List<Crime> crimes) {
+            mCrimes = crimes;
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            // If we weren't given a view, inflate one
-            if (convertView == null) {
-                convertView = getActivity().getLayoutInflater().inflate(R.layout.list_item_crime, null);
-            }
-            
-            // Configure the view for this crime
-            Crime c = getItem(position);
-            
-            TextView titleTextView = (TextView) convertView.findViewById(R.id.crime_list_item_titleTextView);
-            titleTextView.setText(c.getTitle());
-            
-            TextView dateTextView = (TextView) convertView.findViewById(R.id.crime_list_item_dateTextView);
-            dateTextView.setText(c.getDate().toString());
-            
-            CheckBox solvedCheckBox = (CheckBox) convertView.findViewById(R.id.crime_list_item_solvedCheckBox);
-            solvedCheckBox.setChecked(c.isSolved());
-            
-            return convertView;
+        public CrimeHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+            View view = layoutInflater.inflate(R.layout.list_item_crime, parent, false);
+            return new CrimeHolder(view);
         }
-    }    
+
+        @Override
+        public void onBindViewHolder(CrimeHolder holder, int position) {
+            Crime crime = mCrimes.get(position);
+            holder.bindCrime(crime);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mCrimes.size();
+        }
+    }
+
+    private class CrimeHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        private Crime mCrime;
+
+        private TextView mTitleTextView;
+        private TextView mDateTextView;
+        private CheckBox mSolvedCheckBox;
+
+        public CrimeHolder(View itemView) {
+            super(itemView);
+            itemView.setOnClickListener(this);
+            mTitleTextView = (TextView) itemView.findViewById(R.id.crime_list_item_titleTextView);
+            mDateTextView = (TextView) itemView.findViewById(R.id.crime_list_item_dateTextView);
+            mSolvedCheckBox = (CheckBox) itemView.findViewById(R.id.crime_list_item_solvedCheckBox);
+        }
+
+        public void bindCrime(Crime crime) {
+            mCrime = crime;
+            mTitleTextView.setText(crime.getTitle());
+            mDateTextView.setText(crime.getDate().toString());
+            mSolvedCheckBox.setChecked(crime.isSolved());
+        }
+
+        @Override
+        public void onClick(View view) {
+            // 定义fragment的Callbacks，委托fragment的“托管activity”完成具体的工作，
+            // 以此保证fragment作为独立的开发构件，而不必知道其“托管activity”是如何工作的。
+            // “托管activity”要做的事情是：
+            // 针对平板，把CrimeFragment添加到detailFragmentContainer；针对手机，把启动CrimePagerActivity.
+            mCallbacks.onCrimeSelected(mCrime);
+            // 因此需要删除以下代码。
+            // Start CrimePagerActivity with this crime
+            // Intent i = new Intent(getActivity(), CrimePagerActivity.class);
+            // i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
+            // startActivityForResult(i, REQUEST_CRIME);
+        }
+    }
 }

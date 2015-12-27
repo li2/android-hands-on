@@ -1,10 +1,11 @@
 package me.li2.android.criminalintent;
 
-import java.util.ArrayList;
-import java.util.UUID;
-
 import android.content.Context;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class CrimeLab {
     private static final String TAG = "CrimeLab";
@@ -14,7 +15,7 @@ public class CrimeLab {
     
     // Singletons and centralized data storage
     private static CrimeLab sCrimeLab;
-    private ArrayList<Crime> mCrimes; 
+    private List<Crime> mCrimes;
     private Context mAppContex;
     
     private CrimeLab(Context appContext) {
@@ -56,7 +57,7 @@ public class CrimeLab {
         }
     }
     
-    public ArrayList<Crime> getCrimes() {
+    public List<Crime> getCrimes() {
         return mCrimes;
     }
     
