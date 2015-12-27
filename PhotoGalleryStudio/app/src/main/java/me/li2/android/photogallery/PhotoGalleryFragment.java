@@ -27,6 +27,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SearchView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 
 import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener;
@@ -247,7 +249,8 @@ public class PhotoGalleryFragment extends VisibleFragment {
             // Download images only when they need to be displayed on screen.
             // The adapter will trigger the image downloading here.
             GalleryItem item = getItem(position);
-            mThumbnailThread.queueThumbnail(imageView, item.getUrl());
+//            mThumbnailThread.queueThumbnail(imageView, item.getUrl());
+            Picasso.with(getContext()).load(item.getUrl()).into(imageView);
             return convertView;
         }
     }
