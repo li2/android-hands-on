@@ -3,9 +3,9 @@ package me.li2.android.criminalintent;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.ActionMode;
@@ -25,8 +25,9 @@ import java.util.List;
 
 public class CrimeListFragment extends Fragment {
     private static final String TAG = "CrimeListFragment";
+    private static final String SAVED_SUBTITLE_VISIBLE = "subtitle_visible";
+
     private static final int REQUEST_CRIME = 1;
-    private List<Crime> mCrimes;
     private boolean mSubtitleVisible;
     private Callbacks mCallbacks;
     private CrimeAdapter mCrimeAdapter;
@@ -42,28 +43,21 @@ public class CrimeListFragment extends Fragment {
         super.onCreate(savedInstanceState);
         // let the FragmentManager know that CrimeListFragment needs to receive options menu callbacks.
         setHasOptionsMenu(true);
-
-        getActivity().setTitle(R.string.crimes_title);
-
-        setRetainInstance(true);
-        mSubtitleVisible = false;
     }
     
     @TargetApi(11)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
        View view = inflater.inflate(R.layout.fragment_crime_list, parent, false);
-       
-       if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
-           if (mSubtitleVisible) {
-               getActivity().getActionBar().setSubtitle(R.string.subtitle);
-           }
-       }
 
        mCrimeRecyclerView = (RecyclerView) view.findViewById(R.id.crime_recycler_view);
        mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-       updateUI();
+        if (savedInstanceState != null) {
+            mSubtitleVisible = savedInstanceState.getBoolean(SAVED_SUBTITLE_VISIBLE);
+        }
+
+        updateUI();
 
        return view;
     }
@@ -72,6 +66,12 @@ public class CrimeListFragment extends Fragment {
     public void onResume() {
         super.onResume();
         updateUI();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(SAVED_SUBTITLE_VISIBLE, mSubtitleVisible);
     }
 
     @Override
@@ -98,6 +98,21 @@ public class CrimeListFragment extends Fragment {
         } else {
             mCrimeAdapter.notifyDataSetChanged();
         }
+
+        updateSubtitle();
+    }
+
+    private void updateSubtitle() {
+        CrimeLab crimeLab = CrimeLab.get(getActivity());
+        int crimeCount = crimeLab.getCrimes().size();
+        String subTitle = getResources().getQuantityString(R.plurals.subtitle_plural, crimeCount, crimeCount);
+
+        if (!mSubtitleVisible) {
+            subTitle = null;
+        }
+
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        activity.getSupportActionBar().setSubtitle(subTitle);
     }
 
     @Override
@@ -114,6 +129,8 @@ public class CrimeListFragment extends Fragment {
         MenuItem showSubtitle = menu.findItem(R.id.menu_item_show_subtitle);
         if (mSubtitleVisible && showSubtitle != null) {
             showSubtitle.setTitle(R.string.hide_subtitle);
+        } else {
+            showSubtitle.setTitle(R.string.show_subtitle);
         }
     }
     
@@ -123,19 +140,12 @@ public class CrimeListFragment extends Fragment {
         case R.id.menu_item_new_crime:
             Crime crime = new Crime();
             CrimeLab.get(getActivity()).addCrime(crime);
-            ((CrimeAdapter)mCrimeRecyclerView.getAdapter()).notifyDataSetChanged();
             mCallbacks.onCrimeSelected(crime);
             return true;
         case R.id.menu_item_show_subtitle:
-            if (getActivity().getActionBar().getSubtitle() == null) {
-                getActivity().getActionBar().setSubtitle(R.string.subtitle);
-                mSubtitleVisible = true;
-                item.setTitle(R.string.hide_subtitle);
-            } else {
-                getActivity().getActionBar().setSubtitle(null);
-                mSubtitleVisible = false;
-                item.setTitle(R.string.show_subtitle);
-            }
+            mSubtitleVisible = !mSubtitleVisible;
+            getActivity().invalidateOptionsMenu();
+            updateSubtitle();
             return true;
         default:
             return super.onOptionsItemSelected(item);
