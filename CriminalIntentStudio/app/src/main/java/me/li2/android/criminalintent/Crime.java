@@ -1,10 +1,10 @@
 package me.li2.android.criminalintent;
 
-import java.util.Date;
-import java.util.UUID;
-
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Date;
+import java.util.UUID;
 
 public class Crime {
 
@@ -24,7 +24,11 @@ public class Crime {
     
     public Crime() {
         // Generate unique identifier
-        mId = UUID.randomUUID();
+        this(UUID.randomUUID());
+    }
+
+    public Crime(UUID uuid) {
+        mId = uuid;
         mDate = new Date();
     }
     

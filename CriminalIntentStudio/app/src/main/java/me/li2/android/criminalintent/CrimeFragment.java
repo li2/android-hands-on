@@ -1,9 +1,5 @@
 package me.li2.android.criminalintent;
 
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
@@ -33,6 +29,10 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /*
  * CrimeFragment is a controller that interacts with model and view objects. 
@@ -259,7 +259,7 @@ public class CrimeFragment extends Fragment {
     // Saving application data in onPause() lifecycle method, this is the safest choice.
     public void onPause() {
         super.onPause();
-        CrimeLab.get(getActivity()).saveCrimes();
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
     }
     
     public void returnResult() {
