@@ -30,7 +30,7 @@ public class CrimePagerActivity  extends FragmentActivity
         mViewPager = new ViewPager(this);
         mViewPager.setId(R.id.viewPager);
         setContentView(mViewPager);
-        initActionBar();
+//        initActionBar();
 
         // ActionBar使用自定义布局，目的是为了解决不能设置Up button与屏幕左边距离的问题。
 //        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
