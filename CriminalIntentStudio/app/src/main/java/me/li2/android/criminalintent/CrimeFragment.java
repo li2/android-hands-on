@@ -1,16 +1,14 @@
 package me.li2.android.criminalintent;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.drawable.BitmapDrawable;
-import android.hardware.Camera;
+import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ShareCompat;
@@ -30,6 +28,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.util.Date;
 import java.util.UUID;
 
@@ -48,6 +47,7 @@ public class CrimeFragment extends Fragment {
     private static final int REQUEST_CONTACT = 2;
     
     private Crime mCrime;
+    private File mPhotoFile;
     private EditText mTitleField;
     private Button mDateButton;
     private CheckBox mSolvedCheckBox;
@@ -82,9 +82,9 @@ public class CrimeFragment extends Fragment {
         
         UUID crimeId = (UUID) getArguments().getSerializable(EXTRA_CRIME_ID);
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
+        mPhotoFile = CrimeLab.get(getActivity()).getPhotoFile(mCrime);
     }
 
-    @TargetApi(11)
     @Override
     // Create and configure the fragment's view.
     public View onCreateView(LayoutInflater inflater, ViewGroup container,  Bundle savedInstanceState) {
@@ -133,11 +133,25 @@ public class CrimeFragment extends Fragment {
         });
         
         mPhotoButton = (ImageButton) v.findViewById(R.id.crime_imageButton);
+        // MediaStore defines the public interfaces used in Android for interacting with common media:
+        // images, videos and music.
+        final Intent photoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // If camera is not available, disable camera functionality
+        PackageManager pm = getActivity().getPackageManager();
+        boolean canTakePhoto = (mPhotoFile != null) && (photoIntent.resolveActivity(pm) != null);
+        mPhotoButton.setEnabled(canTakePhoto);
+
+        if (canTakePhoto) {
+            // 默认情况下，ACTION_IMAGE_CAPTURE 仅仅是缩略图，然后通过intent传回数据。
+            // 为了获取全分辨率的图片，必须告知camera图片存储位置，可以通过下述方式：
+            Uri uri = Uri.fromFile(mPhotoFile);
+            photoIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+        }
+
         mPhotoButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getActivity(), CrimeCameraActivity.class);
-                startActivityForResult(intent, REQUEST_PHOTO);
+                startActivityForResult(photoIntent, REQUEST_PHOTO);
             }
         });
         
@@ -145,27 +159,13 @@ public class CrimeFragment extends Fragment {
         mPhotoView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Photo p = mCrime.getPhoto();
-                if (p == null) {
-                    return;
-                }
-                
                 FragmentManager fm = getActivity().getSupportFragmentManager();
-                String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
+                String path = mPhotoFile.getPath();
                 ImageFragment.newInstance(path).show(fm, DIALOG_IMAGE);
             }
         });
-        
-        // If camera is not available, disable camera functionality
-        PackageManager pm = getActivity().getPackageManager();
-        boolean hasACamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) ||
-                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) ||
-                (Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD) ||
-                Camera.getNumberOfCameras() > 0;
-        if (!hasACamera) {
-            mPhotoButton.setEnabled(false);
-        }
-        
+        updatePhotoView();
+
         mReportButton = (Button) v.findViewById(R.id.crime_reportButton);
         mReportButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -224,33 +224,7 @@ public class CrimeFragment extends Fragment {
 
         return v;
     }
-    
-    private void showPhoto() {
-        // (Re)set the image button's image based on our photo
-        Photo p = mCrime.getPhoto();
-        BitmapDrawable b = null;
-        if (p != null) {
-            String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
-            Log.d(TAG, "Crime " + mCrime.getTitle() + " photo path " + path);
-            b = PictureUtils.getScaledDrawable(getActivity(), path);
-            mPhotoView.setImageDrawable(b);
-        }
-    }
-    
-    // onStart()和onStop()是activity可见和消失的时间点。
-    // 最佳实践：activity的视图一出现时就加载图片，然后等到activity再也不可见的情况下，再卸载图片。
-    @Override
-    public void onStart() {
-        super.onStart();
-        showPhoto();
-    }
-    
-    @Override
-    public void onStop() {
-        super.onStop();
-        PictureUtils.cleanImageView(mPhotoView);
-    }
-    
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -288,16 +262,8 @@ public class CrimeFragment extends Fragment {
             updateDate();
             
         } else if (requestCode == REQUEST_PHOTO) {
-            // Create a new photo object and attach it to the crime
-            String filename = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
-            if (filename != null) {
-                Photo photo = new Photo(filename);
-                mCrime.setPhoto(photo);
-                mCallbacks.onCrimeUpdated(mCrime);
-                showPhoto();
-                Log.i(TAG, "Crime: " + mCrime.getTitle() + " has a photo");
-            }
-            
+            updatePhotoView();
+
         } else if (requestCode == REQUEST_CONTACT) {
            // 联系人应用返回包含在intent中的URI数据给父activity时，它会添加一个Intent.FLAG_GRANT_READ_URI_PERMISSION标志。
            // 该标志向Android示意，CriminalIntent应用中的父activity可以使用联系人数据一次。
@@ -356,5 +322,17 @@ public class CrimeFragment extends Fragment {
         
         String report = getString(R.string.crime_report, mCrime.getTitle(), dateString, solvedString, suspect);        
         return report;
+    }
+
+    private void updatePhotoView() {
+        if (mPhotoFile == null || !mPhotoFile.exists()) {
+            mPhotoView.setImageDrawable(null);
+            mPhotoView.setEnabled(false);
+        } else {
+            Log.d(TAG, "Crime " + mCrime.getTitle() + " photo path " + mPhotoFile.getPath());
+            Bitmap bitmap = PictureUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
+            mPhotoView.setImageBitmap(bitmap);
+            mPhotoView.setEnabled(true);
+        }
     }
 }
