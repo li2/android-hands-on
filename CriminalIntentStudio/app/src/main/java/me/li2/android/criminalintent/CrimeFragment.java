@@ -1,6 +1,7 @@
 package me.li2.android.criminalintent;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -61,7 +62,7 @@ public class CrimeFragment extends Fragment {
     public interface Callbacks {
         void onCrimeUpdated(Crime crime);
     }
-    
+
     public static CrimeFragment newInstance(UUID crimeId) {
         // TODO
         // 如果复用fragment，而不是重建，那么应该怎么传递数据呢？
@@ -98,7 +99,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mCrime.setTitle(s.toString());
-                mCallbacks.onCrimeUpdated(mCrime);
+                updateCrime();
             }
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count,  int after) {
@@ -128,7 +129,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 mCrime.setSolved(isChecked);
-                mCallbacks.onCrimeUpdated(mCrime);
+                updateCrime();
             }
         });
         
@@ -226,11 +227,13 @@ public class CrimeFragment extends Fragment {
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // java.lang.ClassCastException: CrimePagerActivity cannot be cast to CrimeFragment$Callbacks
-        // 如果在手机上运行，将会崩溃；因为任何托管CrimeFragment的activity都必须实现CrimeFragment.Callbacks接口。
-        mCallbacks = (Callbacks)activity;
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof Activity) {
+            // java.lang.ClassCastException: CrimePagerActivity cannot be cast to CrimeFragment$Callbacks
+            // 如果在手机上运行，将会崩溃；因为任何托管CrimeFragment的activity都必须实现CrimeFragment.Callbacks接口。
+            mCallbacks = (Callbacks)context;
+        }
     }
 
     @Override
@@ -258,10 +261,11 @@ public class CrimeFragment extends Fragment {
         if (requestCode == REQUEST_DATE) {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
-            mCallbacks.onCrimeUpdated(mCrime);
+            updateCrime();
             updateDate();
             
         } else if (requestCode == REQUEST_PHOTO) {
+            updateCrime();
             updatePhotoView();
 
         } else if (requestCode == REQUEST_CONTACT) {
@@ -288,15 +292,21 @@ public class CrimeFragment extends Fragment {
                c.moveToFirst();
                String suspect = c.getString(0);
                mCrime.setSuspect(suspect);
-               mCallbacks.onCrimeUpdated(mCrime);
+               updateCrime();
                mSuspectButton.setText(suspect);
            } finally {
                c.close();
            }
         }
     }
+
+    private void updateCrime() {
+        // 更新到数据库
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
+        mCallbacks.onCrimeUpdated(mCrime);
+    }
     
-    public void updateDate() {
+    private void updateDate() {
         String dateFormat = "EEE, MMM dd";
         String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
         mDateButton.setText(dateString);

@@ -8,9 +8,11 @@ import android.support.v7.app.AppCompatActivity;
 public abstract class SingleFragmentActivity extends AppCompatActivity {
 
     protected abstract Fragment createFragment();
-    
+
+    // CrimeListActivity 继承自 SingleFragmentActivity，为了让CrimeListActivity能够根据屏幕大小决定
+    // 显示 list 界面，还是 list+detail 界面，所以代替硬编码，这里实现一个接口，由子类决定使用哪个layout。
     protected int getLayoutResId() {
-        return R.layout.activity_fragment;
+        return R.layout.activity_masterdetail;
     }
     
     @Override

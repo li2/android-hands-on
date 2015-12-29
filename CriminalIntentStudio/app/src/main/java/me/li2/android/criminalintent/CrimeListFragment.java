@@ -1,7 +1,7 @@
 package me.li2.android.criminalintent;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -44,8 +44,23 @@ public class CrimeListFragment extends Fragment {
         // let the FragmentManager know that CrimeListFragment needs to receive options menu callbacks.
         setHasOptionsMenu(true);
     }
-    
-    @TargetApi(11)
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof Activity) {
+            // java.lang.ClassCastException: CrimePagerActivity cannot be cast to CrimeFragment$Callbacks
+            // 如果在手机上运行，将会崩溃；因为任何托管CrimeFragment的activity都必须实现CrimeFragment.Callbacks接口。
+            mCallbacks = (Callbacks)context;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
        View view = inflater.inflate(R.layout.fragment_crime_list, parent, false);
@@ -72,20 +87,6 @@ public class CrimeListFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(SAVED_SUBTITLE_VISIBLE, mSubtitleVisible);
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // 在fragment附加给activity时，将托管activity强制类型转换为Callbacks对象并赋值给Callbacks类型变量。
-        // 强制转换而未经类安全性检查，所以托管activity必须实现CrimeListFragment.Callbacks接口。
-        mCallbacks = (Callbacks)activity;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mCallbacks = null;
     }
 
     public void updateUI() {
@@ -141,6 +142,7 @@ public class CrimeListFragment extends Fragment {
         case R.id.menu_item_new_crime:
             Crime crime = new Crime();
             CrimeLab.get(getActivity()).addCrime(crime);
+            updateUI();
             mCallbacks.onCrimeSelected(crime);
             return true;
         case R.id.menu_item_show_subtitle:
@@ -252,6 +254,7 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View view) {
+            // To delegate functionality back to the hosting activity
             // 定义fragment的Callbacks，委托fragment的“托管activity”完成具体的工作，
             // 以此保证fragment作为独立的开发构件，而不必知道其“托管activity”是如何工作的。
             // “托管activity”要做的事情是：

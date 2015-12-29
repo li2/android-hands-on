@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 使用别名（alias）指向另一个资源文件，通过资源文件的后缀名进行识别：res/values-sw600dp/refs.xml 大屏设备的可选别名 -->
 <resources>
     <item name="activity_masterdetail" type="layout">@layout/activity_twopane</item>
 </resources>
