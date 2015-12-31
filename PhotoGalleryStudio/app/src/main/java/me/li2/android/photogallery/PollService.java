@@ -1,7 +1,5 @@
 package me.li2.android.photogallery;
 
-import java.util.ArrayList;
-
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
@@ -15,6 +13,8 @@ import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import java.util.List;
 
 public class PollService extends IntentService {
     private static final String TAG = "PollService";
@@ -50,7 +50,7 @@ public class PollService extends IntentService {
         String lastResultId = prefs.getString(FlickrFetchr.PREF_LAST_RESULT_ID, null);
         
         // 使用FlickrFetchr获取最新的图片集。
-        ArrayList<GalleryItem> items;
+        List<GalleryItem> items;
         if (query != null) {
             items = new FlickrFetchr().search(query);
         } else {

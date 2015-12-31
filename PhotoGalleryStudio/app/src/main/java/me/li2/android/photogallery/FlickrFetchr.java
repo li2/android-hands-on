@@ -1,12 +1,7 @@
 package me.li2.android.photogallery;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
+import android.net.Uri;
+import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -18,12 +13,17 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import android.net.Uri;
-import android.util.Log;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FlickrFetchr {
     public static final String TAG = "FlickrFetchr";
@@ -35,6 +35,7 @@ public class FlickrFetchr {
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
     // The Url to get recent photos on flickr.com
     // https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s
+    // 上述url获取的是xml文件，加上 &format=json&nojsoncallback=1 可以获取json文件。
     // The Url to search text such as "android" on flickr.com
     // https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s&text=android
     private static final String ENDPOINT = "https://api.flickr.com/services/rest/";
@@ -56,7 +57,7 @@ public class FlickrFetchr {
             InputStream in = connection.getInputStream();
             
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                return null;
+                throw new IOException(connection.getResponseMessage() + ": with " + urlSpec);
             }
             
             int bytesRead = 0;
@@ -97,42 +98,40 @@ public class FlickrFetchr {
     }
     
     public String getUrl(String urlSpec) throws IOException {
-        return new String(getUrlBytes2(urlSpec));
+        return new String(getUrlBytes(urlSpec));
     }
     
     // Search和getRecent命令获取的xml格式一致，因此可以使用相同的代码解析。
-    public ArrayList<GalleryItem> downloadGalleryItems(String url) {
-        ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
+    public List<GalleryItem> downloadGalleryItems(String url) {
+        List<GalleryItem> items = new ArrayList<>();
 
         try {
-            String xmlString = getUrl(url);
-            Log.d(TAG, "Received xml: " + xmlString);
-            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-            XmlPullParser parser = factory.newPullParser();
-            parser.setInput(new StringReader(xmlString));
-            
-            parseItems(items, parser);
+            String jsonString = getUrl(url);
+            Log.d(TAG, "Received json string: " + jsonString);
+            parseItems(items, new JSONObject(jsonString));
         } catch (IOException ioe) {
             Log.e(TAG, "Failed to fetch items", ioe);
-        } catch (XmlPullParserException xppe) {
-            Log.e(TAG, "Failed to parse items", xppe);
+        } catch (JSONException je) {
+            Log.e(TAG, "Failed to parse items", je);
         }
         
         return items;
     }
     
     // 封装getRecent的Url请求。
-    public ArrayList<GalleryItem> fetchItems() {
+    public List<GalleryItem> fetchItems() {
         String url = Uri.parse(ENDPOINT).buildUpon()
                 .appendQueryParameter("method", METHOD_GET_RECENT)
                 .appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("format", "json")
+                .appendQueryParameter("nojsoncallback", "1")
                 .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
                 .build().toString();
         return downloadGalleryItems(url);
     }
     
     // 封装Search的Url请求。
-    public ArrayList<GalleryItem> search(String query) {
+    public List<GalleryItem> search(String query) {
         String url = Uri.parse(ENDPOINT).buildUpon()
                 .appendQueryParameter("method", METHOD_SEARCH)
                 .appendQueryParameter("api_key", API_KEY)
@@ -143,26 +142,24 @@ public class FlickrFetchr {
         return downloadGalleryItems(url);
     }
     
-    void parseItems(ArrayList<GalleryItem> items, XmlPullParser parser)
-            throws XmlPullParserException, IOException {
-        int eventType = parser.next();
-        
-        while (eventType != XmlPullParser.END_DOCUMENT) {
-            if (eventType == XmlPullParser.START_TAG &&
-                    XML_PHOTO.equals(parser.getName())) {
-                String id = parser.getAttributeValue(null, "id");
-                String caption = parser.getAttributeValue(null, "title");
-                String smallUrl = parser.getAttributeValue(null, EXTRA_SMALL_URL);
-                String owner = parser.getAttributeValue(null, "owner");
-                GalleryItem item = new GalleryItem();
-                item.setId(id);
-                item.setCaption(caption);
-                item.setUrl(smallUrl);
-                item.setOwner(owner);
-                items.add(item);
+    void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException, IOException {
+        JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
+        JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
+
+        for (int i=0; i<photoJsonArray.length(); i++) {
+            JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
+
+            GalleryItem item = new GalleryItem();
+            item.setId(photoJsonObject.getString("id"));
+            item.setOwner(photoJsonObject.getString("owner"));
+            item.setCaption(photoJsonObject.getString("title"));
+
+            if (!photoJsonObject.has("url_s")) {
+                return;
             }
-            
-            eventType = parser.next();
+
+            item.setUrl(photoJsonObject.getString("url_s"));
+            items.add(item);
         }
     }
 }

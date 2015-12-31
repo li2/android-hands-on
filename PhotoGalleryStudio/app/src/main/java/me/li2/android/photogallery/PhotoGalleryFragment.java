@@ -13,6 +13,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -20,23 +22,18 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SearchView;
 
-import com.squareup.picasso.Picasso;
-
 import java.util.ArrayList;
+import java.util.List;
 
 import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener;
 
 public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
-    GridView mGridView;
-    ArrayList<GalleryItem> mItems;
+    RecyclerView mPhotoRecyclerView;
+    List<GalleryItem> mItems;
     ThumbnailDownloader<ImageView> mThumbnailThread;
     
     @Override
@@ -72,23 +69,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
-        mGridView = (GridView) view.findViewById(R.id.gridView);
+        mPhotoRecyclerView = (RecyclerView) view.findViewById(R.id.fragment_photo_gallery_recycler_view);
+        mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
         setupAdapter();
-        
-        // 监听GridView item点击事件，通过隐式 implicit intent 启动默认浏览器以查看图片。
-        mGridView.setOnItemClickListener(new OnItemClickListener() {
-           @Override
-           public void onItemClick(AdapterView<?> gridView, View view, int pos, long id) {
-               GalleryItem item = mItems.get(pos);
-               
-               Uri photoPageUri = Uri.parse(item.getPhotoPageUrl());
-               // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
-               // 使用显示 explicit intent 代替隐式 implicit intent，在应用内的WebView中打开图片，而不是在外部的浏览器。
-               Intent i = new Intent(getActivity(), PhotoPageActivity.class);
-               i.setData(photoPageUri);
-               startActivity(i);
-           }
-        });
         
         return view;
     }
@@ -191,25 +174,25 @@ public class PhotoGalleryFragment extends VisibleFragment {
     void setupAdapter() {
         // when using an AsyncTask, you must check to make sure that your fragment is still attached.
         // If it is not, then operations that rely on the that activity (like creating your ArrayAdapter) will fail. 
-        if (getActivity() == null || mGridView == null) {
+        if (getActivity() == null || mPhotoRecyclerView == null) {
             return;
         }
         if (mItems != null) {
-            mGridView.setAdapter(new GalleryItemAdapter(mItems));
+            mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
         } else {
-            mGridView.setAdapter(null);
+            mPhotoRecyclerView.setAdapter(null);
         }
     }
     
     // Using AsyncTask to run on a background thread.
     // 在后台线程上从Flicker获取XML数据，然后解析XML并将解析结果存入到GalleryItem数组中。最终每个GalleryItem都包含一个缩略图的URL.
     // AsyncTask适合短暂且较少重复的任务。对于重复的、长时间的任务，需要创建一个专用的后台线程。
-    private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
+    private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>> {
         @Override
-        protected ArrayList<GalleryItem> doInBackground(Void... params) {
+        protected List<GalleryItem> doInBackground(Void... params) {
             Activity activity = getActivity();
             if (activity == null) {
-                return new ArrayList<GalleryItem>();
+                return new ArrayList<>();
             }
 
             // 取回存储在shared preferences中的搜索信息。
@@ -224,34 +207,68 @@ public class PhotoGalleryFragment extends VisibleFragment {
         }
         
         @Override
-        protected void onPostExecute(ArrayList<GalleryItem> items) {
+        protected void onPostExecute(List<GalleryItem> items) {
             mItems = items;
             setupAdapter();
         }
     }
     
-    private class GalleryItemAdapter extends ArrayAdapter<GalleryItem> {
-        public GalleryItemAdapter(ArrayList<GalleryItem> items) {
-            super(getActivity(), 0, items);
+    private class PhotoAdapter extends RecyclerView.Adapter<PhotoViewHolder> {
+        private List<GalleryItem> mGalleryItems;
+
+        public PhotoAdapter(List<GalleryItem> galleryItems) {
+            mGalleryItems = galleryItems;
         }
-        
+
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = getActivity().getLayoutInflater().inflate(R.layout.gallery_item, parent, false);
-            }
-            ImageView imageView = (ImageView) convertView.findViewById(R.id.gallery_item_imageView);
-            imageView.setImageResource(R.drawable.ic_photo);
-            
-            // 然后需要下载缩略图。如果再AsyncTask中完成所有缩略图的下载，存在两个问题：下载耗时，在下载完成之前UI无法更新；如果缩略图很多，可能会耗尽内存。
+        public PhotoViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+            return new PhotoViewHolder(layoutInflater.inflate(R.layout.gallery_item, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(PhotoViewHolder holder, int position) {
+            GalleryItem galleryItem = mGalleryItems.get(position);
+
+            // 然后需要下载缩略图。如果再AsyncTask中完成所有缩略图的下载，存在两个问题：
+            // 下载耗时，在下载完成之前UI无法更新；如果缩略图很多，可能会耗尽内存。
             // 所以实际开发时，通常仅在需要显示图片时才去下载。而Adapter知道何时显示哪些视图，所以adapter负责按需下载。
             // 所以我们在此处安排后台线程的下载任务。
             // Download images only when they need to be displayed on screen.
             // The adapter will trigger the image downloading here.
-            GalleryItem item = getItem(position);
-//            mThumbnailThread.queueThumbnail(imageView, item.getUrl());
-            Picasso.with(getContext()).load(item.getUrl()).into(imageView);
-            return convertView;
+            holder.bindGalleryItem(galleryItem);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mGalleryItems.size();
+        }
+    }
+
+    private class PhotoViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        private ImageView mImageView;
+        private GalleryItem mGalleryItem;
+
+        public PhotoViewHolder(View itemView) {
+            super(itemView);
+            mImageView = (ImageView) itemView.findViewById(R.id.gallery_item_imageView);
+        }
+
+        public void bindGalleryItem(GalleryItem galleryItem) {
+            mGalleryItem = galleryItem;
+            mImageView.setImageResource(R.drawable.ic_photo);
+            // Picasso.with(getActivity()).load(mGalleryItem.getUrl()).into(mImageView);
+            mThumbnailThread.queueThumbnail(mImageView, mGalleryItem.getUrl());
+        }
+
+        @Override
+        public void onClick(View view) {
+            Uri photoPageUri = Uri.parse(mGalleryItem.getPhotoPageUrl());
+            // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
+            // 使用显示explicit intent 代替隐式implicit intent，在应用内的WebView中打开图片，而不是在外部的浏览器。
+            Intent intent = new Intent(getActivity(), PhotoPageActivity.class);
+            intent.setData(photoPageUri);
+            startActivity(intent);
         }
     }
 }

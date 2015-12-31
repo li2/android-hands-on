@@ -4,10 +4,6 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk
-        android:minSdkVersion="11"
-        android:targetSdkVersion="21" />
-    
     <!-- Private Permission：使用dynamic broadcast receiver存在一个问题，系统中的任何应用都可以监听broadcast
     , 或者触发这个receiver. 为防止被未授权的App使用，可以创建自己的安全许可，用来控制other package访问
     , your package的components/features.
