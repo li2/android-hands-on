@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.util.LruCache;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -35,23 +36,31 @@ public class PhotoGalleryFragment extends VisibleFragment {
     RecyclerView mPhotoRecyclerView;
     List<GalleryItem> mItems;
     ThumbnailDownloader<ImageView> mThumbnailThread;
-    
+    LruCache<String, Bitmap> mMemoryCache;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);        
         setHasOptionsMenu(true); // 注册选项菜单
         updateItems();
+
+        // Caching bitmaps, keeping recently referenced objects in a strong referenced LinkedHashMap
+        // and evicting the least recently used memory before the cache exceeds its designed size.
+        // Refer to Android Training: caching bitmaps.
+        buildMemoryCache();
         
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？
         // 把主线程的handler传给后台线程，后台线程就可以通过这个handler传递消息给主线程，以安排主线程显示图片。
         mThumbnailThread = new ThumbnailDownloader<ImageView>(new Handler());
         mThumbnailThread.setThumbnailDownloadListener(new ThumbnailDownloadListener<ImageView>() {
-            public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail) {
+            public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail, String url) {
                 if (isVisible()) {
                     // ImageView是最合适的Token，它是下载的图片最终要显示的地方。                    
                     imageView.setImageBitmap(thumbnail);
+                    // Caching bitmap.
+                    addBitmapToMemoryCache(url, thumbnail);
                 }
             }
         });
@@ -252,13 +261,21 @@ public class PhotoGalleryFragment extends VisibleFragment {
         public PhotoViewHolder(View itemView) {
             super(itemView);
             mImageView = (ImageView) itemView.findViewById(R.id.gallery_item_imageView);
+            mImageView.setOnClickListener(this);
         }
 
         public void bindGalleryItem(GalleryItem galleryItem) {
             mGalleryItem = galleryItem;
-            mImageView.setImageResource(R.drawable.ic_photo);
-            // Picasso.with(getActivity()).load(mGalleryItem.getUrl()).into(mImageView);
-            mThumbnailThread.queueThumbnail(mImageView, mGalleryItem.getUrl());
+
+            // check memory cache.
+            Bitmap bitmap = getBitmapFromMemoryCache(mGalleryItem.getUrl());
+            if (bitmap != null) {
+                mImageView.setImageBitmap(bitmap);
+            } else {
+                mImageView.setImageResource(R.drawable.ic_photo);
+                // Picasso.with(getActivity()).load(mGalleryItem.getUrl()).into(mImageView);
+                mThumbnailThread.queueThumbnail(mImageView, mGalleryItem.getUrl());
+            }
         }
 
         @Override
@@ -270,5 +287,31 @@ public class PhotoGalleryFragment extends VisibleFragment {
             intent.setData(photoPageUri);
             startActivity(intent);
         }
+    }
+
+    private void buildMemoryCache() {
+        // Get max available VM memory, exceeding this amount will throw an OutOfMemory exception.
+        // Stored in kilobytes as LruCache takes an int in its constructor.
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+        // Use 1/8th of the available memory for this memory cache.
+        final int cacheSize = maxMemory / 8;
+
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                // The cache size will be measured in KB rather than number of items.
+                return bitmap.getByteCount() / 1024;
+            }
+        };
+    }
+
+    private void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemoryCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    private Bitmap getBitmapFromMemoryCache(String key) {
+        return mMemoryCache.get(key);
     }
 }

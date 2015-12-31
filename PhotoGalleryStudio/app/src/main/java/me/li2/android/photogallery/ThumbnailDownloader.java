@@ -1,9 +1,5 @@
 package me.li2.android.photogallery;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +7,11 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ThumbnailDownloader<Token> extends HandlerThread {
     private static final String TAG = "ThumbnailDownloader";
@@ -22,7 +23,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
     ThumbnailDownloadListener<Token> mThumbnailDownloadListener;
     
     public interface ThumbnailDownloadListener<Token> {
-        void onThumbnailDownloaded(Token token, Bitmap thumbnail);
+        void onThumbnailDownloaded(Token token, Bitmap thumbnail, String url);
     }
     
     public void setThumbnailDownloadListener(ThumbnailDownloadListener<Token> l) {
@@ -84,7 +85,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
                         return;
                     }
                     requestMap.remove(token);
-                    mThumbnailDownloadListener.onThumbnailDownloaded(token, bitmap);
+                    mThumbnailDownloadListener.onThumbnailDownloaded(token, bitmap, url);
                 }
             });
             

@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "me.li2.android.photogallery"
-        minSdkVersion 11
+        minSdkVersion 12
         targetSdkVersion 21
     }
 
@@ -23,5 +23,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'com.mcxiaoke.volley:library:1.0.17'
-    compile 'com.android.support:recyclerview-v7:23.1.1'
+    compile 'com.android.support:recyclerview-v7:+'
 }
