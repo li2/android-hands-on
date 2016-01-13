@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -26,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SearchView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +35,8 @@ import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener
 
 public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
+    private final static boolean FETCH_ITEMS_FROM_LOCAL_JSON = true; // just for testing disk cache
+
     RecyclerView mPhotoRecyclerView;
     List<GalleryItem> mItems;
     ThumbnailDownloader<ImageView> mThumbnailThread;
@@ -45,11 +49,12 @@ public class PhotoGalleryFragment extends VisibleFragment {
         setHasOptionsMenu(true); // 注册选项菜单
         updateItems();
 
-        // Caching bitmaps, keeping recently referenced objects in a strong referenced LinkedHashMap
-        // and evicting the least recently used memory before the cache exceeds its designed size.
-        // Refer to Android Training: caching bitmaps.
+        // Initialize memory cache
         buildMemoryCache();
-        
+
+        // Initialize disk cache on background thread.
+        new InitDiskCacheTask().execute();
+
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？
         // 把主线程的handler传给后台线程，后台线程就可以通过这个handler传递消息给主线程，以安排主线程显示图片。
@@ -60,7 +65,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
                     // ImageView是最合适的Token，它是下载的图片最终要显示的地方。                    
                     imageView.setImageBitmap(thumbnail);
                     // Caching bitmap.
-                    addBitmapToMemoryCache(url, thumbnail);
+                    addBitmapToDiskCache(url, thumbnail);
                 }
             }
         });
@@ -192,7 +197,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
             mPhotoRecyclerView.setAdapter(null);
         }
     }
-    
+
     // Using AsyncTask to run on a background thread.
     // 在后台线程上从Flicker获取XML数据，然后解析XML并将解析结果存入到GalleryItem数组中。最终每个GalleryItem都包含一个缩略图的URL.
     // AsyncTask适合短暂且较少重复的任务。对于重复的、长时间的任务，需要创建一个专用的后台线程。
@@ -211,7 +216,12 @@ public class PhotoGalleryFragment extends VisibleFragment {
                 Log.d(TAG, "Search query: " + query);
                 return new FlickrFetchr().search(query);
             } else {
-                return new FlickrFetchr().fetchItems();
+                if (FETCH_ITEMS_FROM_LOCAL_JSON) {
+                    Log.d(TAG, "Fetch items from local json file.");
+                    return new FlickrFetchr().fetchItemsFromLocal(getContext(), R.raw.data);
+                } else {
+                    return new FlickrFetchr().fetchItems();
+                }
             }
         }
         
@@ -264,6 +274,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
             mImageView.setOnClickListener(this);
         }
 
+        // Load bitmap
         public void bindGalleryItem(GalleryItem galleryItem) {
             mGalleryItem = galleryItem;
 
@@ -273,8 +284,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
                 mImageView.setImageBitmap(bitmap);
             } else {
                 mImageView.setImageResource(R.drawable.ic_photo);
-                // Picasso.with(getActivity()).load(mGalleryItem.getUrl()).into(mImageView);
-                mThumbnailThread.queueThumbnail(mImageView, mGalleryItem.getUrl());
+                // check disk cache in a background task
+                BitmapWorkerTask task = new BitmapWorkerTask(mImageView);
+                task.execute(galleryItem.getUrl());
             }
         }
 
@@ -289,6 +301,10 @@ public class PhotoGalleryFragment extends VisibleFragment {
         }
     }
 
+    // Use a memory cache:
+    // Caching bitmaps, keeping recently referenced objects in a strong referenced LinkedHashMap
+    // and evicting the least recently used memory before the cache exceeds its designed size.
+    // Refer to Android Training: caching bitmaps.
     private void buildMemoryCache() {
         // Get max available VM memory, exceeding this amount will throw an OutOfMemory exception.
         // Stored in kilobytes as LruCache takes an int in its constructor.
@@ -313,5 +329,90 @@ public class PhotoGalleryFragment extends VisibleFragment {
 
     private Bitmap getBitmapFromMemoryCache(String key) {
         return mMemoryCache.get(key);
+    }
+
+
+    // Use a disk cache:
+    // JakeWharton/DiskLruCache: Java Implementation of a Disk-based LRU cache.
+    // A cache that uses a bounded amount of space on a filesystem.
+    // Refer:
+    // http://developer.android.com/training/displaying-bitmaps/cache-bitmap.html
+    // http://stackoverflow.com/a/10235381/2722270
+    // https://jsonformatter.curiousconcept.com/
+    private DiskLruImageCache mDiskLruImageCache;
+    private final Object mDiskCacheLock = new Object();
+    private boolean mDiskCacheStarting = true;
+    private static final int DISK_CACHE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final String DISK_CACHE_SUBDIR = "thumbnails";
+    private static final CompressFormat COMPRESS_FORMAT = CompressFormat.JPEG;
+    private static int COMPRESS_QUALITY = 70;
+
+    private class InitDiskCacheTask extends AsyncTask<File, Void, Void> {
+        @Override
+        protected Void doInBackground(File... files) {
+            synchronized(mDiskCacheLock) {
+                mDiskLruImageCache = new DiskLruImageCache(getContext(),
+                        DISK_CACHE_SUBDIR, DISK_CACHE_SIZE, COMPRESS_FORMAT, COMPRESS_QUALITY);
+                mDiskCacheStarting = false; // Finished initialization
+                mDiskCacheLock.notifyAll(); // Wake any waiting threads
+            }
+            return null;
+        }
+    }
+
+    private class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
+
+        private final ImageView mImageView;
+
+        public BitmapWorkerTask(ImageView imageView) {
+            mImageView = imageView;
+        }
+
+        // Decode image in background
+        @Override
+        protected Bitmap doInBackground(String... urls) {
+            final String url = urls[0];
+            // Check disk cache in background thread
+            Bitmap bitmap = getBitmapFromDiskCache(url);
+            if (bitmap == null) {
+                // not found in disk cache
+                mThumbnailThread.queueThumbnail(mImageView, url);
+            }
+
+            return bitmap;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            if (bitmap != null) {
+                mImageView.setImageBitmap(bitmap);
+            }
+        }
+    }
+
+    private void addBitmapToDiskCache(String url, Bitmap bitmap) {
+        // Add to memory cache as before
+        addBitmapToMemoryCache(url, bitmap);
+
+        // Also add to disk cache
+        synchronized (mDiskCacheLock) {
+            mDiskLruImageCache.put(Utils.hashKeyForDisk(url), bitmap);
+        }
+    }
+
+    private Bitmap getBitmapFromDiskCache(String url) {
+        synchronized (mDiskCacheLock) {
+            // Wait while disk cache is started from background thread
+            while (mDiskCacheStarting) {
+                try {
+                    mDiskCacheLock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return mDiskLruImageCache.getBitmap(Utils.hashKeyForDisk(url));
+        }
     }
 }

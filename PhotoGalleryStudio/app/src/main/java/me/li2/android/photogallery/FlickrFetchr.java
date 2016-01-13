@@ -1,5 +1,6 @@
 package me.li2.android.photogallery;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
@@ -35,7 +36,10 @@ public class FlickrFetchr {
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
     // The Url to get recent photos on flickr.com
     // https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s
-    // 上述url获取的是xml文件，加上 &format=json&nojsoncallback=1 可以获取json文件。
+
+    // 上述url获取的是xml文件，加上 &format=json&nojsoncallback=1 可以获取json文件：
+    // https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s&format=json&nojsoncallback=1
+
     // The Url to search text such as "android" on flickr.com
     // https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s&text=android
     private static final String ENDPOINT = "https://api.flickr.com/services/rest/";
@@ -96,11 +100,11 @@ public class FlickrFetchr {
             return EntityUtils.toByteArray(httpResponse.getEntity());
         }
     }
-    
+
     public String getUrl(String urlSpec) throws IOException {
         return new String(getUrlBytes(urlSpec));
     }
-    
+
     // Search和getRecent命令获取的xml格式一致，因此可以使用相同的代码解析。
     public List<GalleryItem> downloadGalleryItems(String url) {
         List<GalleryItem> items = new ArrayList<>();
@@ -114,7 +118,7 @@ public class FlickrFetchr {
         } catch (JSONException je) {
             Log.e(TAG, "Failed to parse items", je);
         }
-        
+
         return items;
     }
     
@@ -128,6 +132,19 @@ public class FlickrFetchr {
                 .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
                 .build().toString();
         return downloadGalleryItems(url);
+    }
+
+    public List<GalleryItem> fetchItemsFromLocal(Context context, int rawId) {
+        List<GalleryItem> items = new ArrayList<>();
+        String jsonString = Utils.loadRawFileToString(context, R.raw.data);
+        try {
+            parseItems(items, new JSONObject(jsonString));
+        } catch (IOException ioe) {
+            Log.e(TAG, "Failed to fetch items", ioe);
+        } catch (JSONException je) {
+            Log.e(TAG, "Failed to parse items", je);
+        }
+        return items;
     }
     
     // 封装Search的Url请求。

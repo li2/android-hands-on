@@ -22,7 +22,10 @@
     <!-- 允许app接收系统启动完成后的广播消息，这里有个坑，手机设置中有“开机自启动项”，app被禁止了 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="me.li2.android.photogallery.PRIVATE"/>
-    
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="18"/>
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
