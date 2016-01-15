@@ -28,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.SearchView;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,12 +59,22 @@ public class PhotoGalleryFragment extends VisibleFragment {
         // 通过专用线程下载缩略图后，还需要解决的一个问题是，
         // 在无法与主线程直接通信的情况下，如何协同GridView的adapter实现图片显示呢？
         // 把主线程的handler传给后台线程，后台线程就可以通过这个handler传递消息给主线程，以安排主线程显示图片。
+        // ImageView是最合适的Token，它是下载的图片最终要显示的地方。
         mThumbnailThread = new ThumbnailDownloader<ImageView>(new Handler());
         mThumbnailThread.setThumbnailDownloadListener(new ThumbnailDownloadListener<ImageView>() {
             public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail, String url) {
                 if (isVisible()) {
-                    // ImageView是最合适的Token，它是下载的图片最终要显示的地方。                    
-                    imageView.setImageBitmap(thumbnail);
+                    // 比如，第1屏触发了下载，但并未下载完，然后向下滚到了第2屏，第1屏的图片加载到了第2屏上，显示就错了。
+                    // ViewHolder中持有ImageView，会被循环利用，而图片下载是异步的，
+                    // 为了避免下载的图片加载到错误的ImageView上，需要在bind ViewHolder时给imageView设置一个tag（url）
+                    // 当图片下载完成后，如果url和当前的imageView tag一致，则显示图片。
+                    String tag = (String)(imageView.getTag());
+                    if (tag.equals(url)) {
+                        imageView.setImageBitmap(thumbnail);
+                    } else {
+                        Log.e(TAG, "NOTEQUAL-Internet: " + tag + ", " + url);
+                    }
+
                     // Caching bitmap.
                     addBitmapToDiskCache(url, thumbnail);
                 }
@@ -248,13 +259,6 @@ public class PhotoGalleryFragment extends VisibleFragment {
         @Override
         public void onBindViewHolder(PhotoViewHolder holder, int position) {
             GalleryItem galleryItem = mGalleryItems.get(position);
-
-            // 然后需要下载缩略图。如果再AsyncTask中完成所有缩略图的下载，存在两个问题：
-            // 下载耗时，在下载完成之前UI无法更新；如果缩略图很多，可能会耗尽内存。
-            // 所以实际开发时，通常仅在需要显示图片时才去下载。而Adapter知道何时显示哪些视图，所以adapter负责按需下载。
-            // 所以我们在此处安排后台线程的下载任务。
-            // Download images only when they need to be displayed on screen.
-            // The adapter will trigger the image downloading here.
             holder.bindGalleryItem(galleryItem);
         }
 
@@ -277,6 +281,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
         // Load bitmap
         public void bindGalleryItem(GalleryItem galleryItem) {
             mGalleryItem = galleryItem;
+            mImageView.setTag(mGalleryItem.getUrl());
 
             // check memory cache.
             Bitmap bitmap = getBitmapFromMemoryCache(mGalleryItem.getUrl());
@@ -361,22 +366,23 @@ public class PhotoGalleryFragment extends VisibleFragment {
     }
 
     private class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
-
-        private final ImageView mImageView;
+        private final WeakReference<ImageView> imageViewReference;
+        private String url = null;
 
         public BitmapWorkerTask(ImageView imageView) {
-            mImageView = imageView;
+            imageViewReference = new WeakReference<>(imageView);
         }
 
         // Decode image in background
         @Override
         protected Bitmap doInBackground(String... urls) {
-            final String url = urls[0];
+            url = urls[0];
             // Check disk cache in background thread
             Bitmap bitmap = getBitmapFromDiskCache(url);
+
             if (bitmap == null) {
                 // not found in disk cache
-                mThumbnailThread.queueThumbnail(mImageView, url);
+                mThumbnailThread.queueThumbnail(imageViewReference.get(), url);
             }
 
             return bitmap;
@@ -386,7 +392,8 @@ public class PhotoGalleryFragment extends VisibleFragment {
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             if (bitmap != null) {
-                mImageView.setImageBitmap(bitmap);
+                ImageView imageView = imageViewReference.get();
+                imageView.setImageBitmap(bitmap);
             }
         }
     }
