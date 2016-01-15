@@ -393,7 +393,13 @@ public class PhotoGalleryFragment extends VisibleFragment {
             super.onPostExecute(bitmap);
             if (bitmap != null) {
                 ImageView imageView = imageViewReference.get();
-                imageView.setImageBitmap(bitmap);
+
+                String tag = (String)(imageView.getTag());
+                if (tag.equals(url)) {
+                    imageView.setImageBitmap(bitmap);
+                } else {
+                    Log.e(TAG, "NOTEQUAL-readDiskCacheTask: " + tag + ", " + url);
+                }
             }
         }
     }
@@ -419,7 +425,26 @@ public class PhotoGalleryFragment extends VisibleFragment {
                 }
             }
 
+            //sleep(1); // for test purpose
             return mDiskLruImageCache.getBitmap(Utils.hashKeyForDisk(url));
         }
     }
+
+    /**
+     * Pauses the current thread for the specified number of seconds.
+     *
+     * @param seconds The number of seconds to pause.
+     */
+    void sleep(float seconds) {
+        long endTime = System.currentTimeMillis() + (long)(seconds*1000);
+        while (System.currentTimeMillis() < endTime) {
+            synchronized (this) {
+                try {
+                    wait(endTime - System.currentTimeMillis());
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
 }
