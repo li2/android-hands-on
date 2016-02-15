@@ -3,11 +3,15 @@ package me.li2.android.photogallery;
 /**
  * Created by weiyi on 2/15/16.
  */
+
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.widget.ImageView;
 
 public class ForegroundImageView extends ImageView {
@@ -103,5 +107,18 @@ public class ForegroundImageView extends ImageView {
         if (foreground != null) {
             foreground.draw(canvas);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                if (foreground != null) {
+                    foreground.setHotspot(e.getX(), e.getY());
+                }
+            }
+        }
+        return super.onTouchEvent(e);
     }
 }
