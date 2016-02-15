@@ -13,17 +13,17 @@
         android:id="@+id/menu_item_search"
         android:title="@string/search"
         android:icon="@android:drawable/ic_menu_search"
-        android:showAsAction="ifRoom"
-        android:actionViewClass="android.widget.SearchView" />
+        app:showAsAction="ifRoom"
+        app:actionViewClass="android.widget.SearchView" />
     
     <item
         android:id="@+id/menu_item_clear"
         android:title="@string/clear_search"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
-        android:showAsAction="ifRoom" />
+        app:showAsAction="ifRoom" />
     
     <item android:id="@+id/menu_item_toggle_polling"
         android:title="@string/start_polling"
-        android:showAsAction="ifRoom" />
+        app:showAsAction="ifRoom" />
 
 </menu>

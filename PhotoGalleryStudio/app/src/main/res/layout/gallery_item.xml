@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+<me.li2.android.photogallery.ForegroundImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:contentDescription="@string/app_name"
     android:id="@+id/gallery_item_imageView"
     android:layout_width="match_parent"
     android:layout_height="120dp"
-    android:scaleType="centerCrop" >    
-</ImageView>
+    android:foreground="?android:attr/selectableItemBackground"
+    android:scaleType="centerCrop" >
+</me.li2.android.photogallery.ForegroundImageView>
