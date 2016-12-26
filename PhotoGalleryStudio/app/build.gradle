@@ -1,8 +1,9 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.2"
+    useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         applicationId "me.li2.android.photogallery"
@@ -19,8 +20,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:22.2.1'
-    compile 'com.android.support:appcompat-v7:22.2.1'
+    compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'com.mcxiaoke.volley:library:1.0.17'
     compile 'com.android.support:recyclerview-v7:+'
