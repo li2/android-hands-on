@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -36,7 +37,12 @@ import me.li2.android.photogallery.ThumbnailDownloader.ThumbnailDownloadListener
 
 public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
-    private final static boolean FETCH_ITEMS_FROM_LOCAL_JSON = true; // just for testing disk cache
+    private static final boolean FETCH_ITEMS_FROM_LOCAL_JSON = true; // just for testing disk cache
+
+    // Horizon orientation with 2 rows and 4 columns
+    private static final int LAYOUT_ORIENTATION = GridLayoutManager.HORIZONTAL;
+    private static final int LAYOUT_ROWS_NUMBER = 2;
+    private static final int LAYOUT_COLUMNS_NUMBER = 4;
 
     RecyclerView mPhotoRecyclerView;
     List<GalleryItem> mItems;
@@ -95,7 +101,10 @@ public class PhotoGalleryFragment extends VisibleFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
         mPhotoRecyclerView = (RecyclerView) view.findViewById(R.id.fragment_photo_gallery_recycler_view);
-        mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+        // shows items in a horizontal scrolling lis
+        GridLayoutManager layoutManager = new GridLayoutManager(
+                getActivity(), LAYOUT_ROWS_NUMBER, LAYOUT_ORIENTATION, false);
+        mPhotoRecyclerView.setLayoutManager(layoutManager);
         setupAdapter();
         
         return view;
@@ -253,7 +262,15 @@ public class PhotoGalleryFragment extends VisibleFragment {
         @Override
         public PhotoViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-            return new PhotoViewHolder(layoutInflater.inflate(R.layout.gallery_item, parent, false));
+            View itemView = layoutInflater.inflate(R.layout.gallery_item, parent, false);
+
+            // set the layout parameters associated with this item view
+            int width = parent.getWidth() / LAYOUT_COLUMNS_NUMBER;
+            int height = ViewGroup.LayoutParams.MATCH_PARENT;
+            RecyclerView.LayoutParams layoutParams = new GridLayoutManager.LayoutParams(width, height);
+            itemView.setLayoutParams(layoutParams);
+
+            return new PhotoViewHolder(itemView);
         }
 
         @Override
@@ -297,6 +314,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
 
         @Override
         public void onClick(View view) {
+            // Use getAdapterPosition() instead of getPosition
+            Toast.makeText(getContext(), "Click item " + getAdapterPosition(), Toast.LENGTH_LONG).show();
+
             Uri photoPageUri = Uri.parse(mGalleryItem.getPhotoPageUrl());
             // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
             // 使用显示explicit intent 代替隐式implicit intent，在应用内的WebView中打开图片，而不是在外部的浏览器。
