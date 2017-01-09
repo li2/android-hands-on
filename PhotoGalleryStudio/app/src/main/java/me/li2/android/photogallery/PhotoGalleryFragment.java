@@ -105,6 +105,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
         GridLayoutManager layoutManager = new GridLayoutManager(
                 getActivity(), LAYOUT_ROWS_NUMBER, LAYOUT_ORIENTATION, false);
         mPhotoRecyclerView.setLayoutManager(layoutManager);
+        // set recycler view item margin
+        float margin = getResources().getDimension(R.dimen.recycler_view_item_margin);
+        mPhotoRecyclerView.addItemDecoration(new RecyclerViewMarginDecoration((int)margin));
         setupAdapter();
         
         return view;

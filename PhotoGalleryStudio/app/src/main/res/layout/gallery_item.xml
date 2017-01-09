@@ -6,5 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:foreground="?android:attr/selectableItemBackground"
+    android:background="@drawable/recycler_placeholder_background"
     android:scaleType="centerCrop" >
 </me.li2.android.photogallery.ForegroundImageView>
