@@ -268,7 +268,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
             View itemView = layoutInflater.inflate(R.layout.gallery_item, parent, false);
 
             // set the layout parameters associated with this item view
-            int width = parent.getWidth() / LAYOUT_COLUMNS_NUMBER;
+            // fix issue that show only part of the rightmost item view after RecyclerView.addItemDecoration
+            float margin = getResources().getDimension(R.dimen.recycler_view_item_margin);
+            int width = (parent.getWidth() - (int)margin * 2 * LAYOUT_COLUMNS_NUMBER) / LAYOUT_COLUMNS_NUMBER;
             int height = ViewGroup.LayoutParams.MATCH_PARENT;
             RecyclerView.LayoutParams layoutParams = new GridLayoutManager.LayoutParams(width, height);
             itemView.setLayoutParams(layoutParams);
