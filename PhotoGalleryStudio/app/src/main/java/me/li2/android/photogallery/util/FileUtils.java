@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.util;
 
 import android.content.Context;
 import android.os.Build;
@@ -13,10 +13,10 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Created by weiyi on 16/1/13.
  */
-public class Utils {
+public class FileUtils {
     public static final int IO_BUFFER_SIZE = 8 * 1024;
 
-    private Utils() {
+    private FileUtils() {
     }
 
     public static boolean isExternalStorageRemovable() {

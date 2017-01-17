@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.ui.widget;
 
 /**
  * Created by weiyi on 2/15/16.
@@ -13,6 +13,8 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+
+import me.li2.android.photogallery.R;
 
 public class ForegroundImageView extends ImageView {
     private Drawable foreground;

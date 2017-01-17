@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.ui;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -11,6 +11,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import me.li2.android.photogallery.R;
+import me.li2.android.photogallery.ui.basic.VisibleFragment;
 
 public class PhotoPageFragment extends VisibleFragment {
 
@@ -74,7 +77,7 @@ public class PhotoPageFragment extends VisibleFragment {
         mWebView.addJavascriptInterface(new Object() {
             @SuppressWarnings("unused")
             public void send(String message) {
-                Log.i(TAG, "Received message: " + message);
+                Log.d(TAG, "Received message: " + message);
             }
         }, "androidObject");
         

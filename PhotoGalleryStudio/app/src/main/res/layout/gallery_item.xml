@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<me.li2.android.photogallery.ForegroundImageView
+<me.li2.android.photogallery.ui.widget.ForegroundImageView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:contentDescription="@string/app_name"
     android:id="@+id/gallery_item_imageView"
@@ -8,4 +8,4 @@
     android:foreground="?android:attr/selectableItemBackground"
     android:background="@drawable/recycler_placeholder_background"
     android:scaleType="centerCrop" >
-</me.li2.android.photogallery.ForegroundImageView>
+</me.li2.android.photogallery.ui.widget.ForegroundImageView>

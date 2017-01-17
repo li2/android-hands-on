@@ -1,9 +1,11 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.ui.basic;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
+
+import me.li2.android.photogallery.R;
 
 public abstract class SingleFragmentActivity extends AppCompatActivity {
 

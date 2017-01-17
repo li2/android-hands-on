@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.model;
 
 public class GalleryItem {
     private String mCaption;

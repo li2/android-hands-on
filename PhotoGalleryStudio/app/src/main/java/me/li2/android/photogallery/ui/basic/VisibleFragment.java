@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.ui.basic;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.app.Fragment;
 import android.widget.Toast;
+
+import me.li2.android.photogallery.download.PollService;
 
 public abstract class VisibleFragment extends Fragment {
     public static final String TAG = "VisibleFragment";

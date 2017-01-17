@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.download;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -14,13 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ThumbnailDownloader<Token> extends HandlerThread {
-    private static final String TAG = "ThumbnailDownloader";
+    private static final String TAG = "LI2_ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
     
-    Handler mHandler;
-    Map<Token, String> requestMap = Collections.synchronizedMap(new HashMap<Token, String>());
-    Handler mResponseHandler;
-    ThumbnailDownloadListener<Token> mThumbnailDownloadListener;
+    private Handler mHandler;
+    private Map<Token, String> requestMap = Collections.synchronizedMap(new HashMap<Token, String>());
+    private Handler mResponseHandler;
+    private ThumbnailDownloadListener<Token> mThumbnailDownloadListener;
     
     public interface ThumbnailDownloadListener<Token> {
         void onThumbnailDownloaded(Token token, Bitmap thumbnail, String url);
@@ -50,7 +50,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
                 if (msg.what == MESSAGE_DOWNLOAD) {
                     @SuppressWarnings("unchecked")
                     Token token = (Token) msg.obj;
-                    Log.i(TAG, "Got a request for url: " + requestMap.get(token));
+                    Log.d(TAG, "Got a request for url: " + requestMap.get(token));
                     handlerRequest(token);
                 }
             }
@@ -58,7 +58,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
     }
     
     public void queueThumbnail(Token token, String url) {
-        Log.i(TAG, "Got an URL: " + url);
+        Log.d(TAG, "Got an URL: " + url);
         // requestMap是一个同步HashMap。 使用Token作为key，可存储或获取与特定Token关联的URL.
         requestMap.put(token, url);
         // mHandler是和后台线程关联的，我们开放这个方法给主线程，主线程调用这个方法来安排后台线程的任务。
@@ -73,9 +73,10 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
             if (url == null) {
                 return;
             }
-            byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
+            FlickrFetcher flickrFetcher = new FlickrFetcher();
+            byte[] bitmapBytes = flickrFetcher.getUrlBytes(url);
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
-            Log.i(TAG, "Bitmap created");
+            Log.d(TAG, "Bitmap created");
             
             // 下载完成后，我们在后台线程使用与主线程关联的handler，安排要在主线程上完成的任务。
             // 除了post，我们也可以sendMessage给主线程，那么主线程的handler需要覆写自己的handleMessage()方法。

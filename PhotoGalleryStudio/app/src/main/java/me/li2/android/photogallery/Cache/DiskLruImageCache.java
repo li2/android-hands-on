@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.cache;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -16,18 +16,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import me.li2.android.photogallery.BuildConfig;
+import me.li2.android.photogallery.util.FileUtils;
+
 /**
  * Created by weiyi on 16/1/13.
  * http://stackoverflow.com/questions/10185898/using-disklrucache-in-android-4-0-does-not-provide-for-opencache-method
  */
 public class DiskLruImageCache {
+    private static final String TAG = "LI2_DiskLruImageCache";
 
     private DiskLruCache mDiskCache;
     private Bitmap.CompressFormat mCompressFormat = Bitmap.CompressFormat.JPEG;
     private int mCompressQuality = 70;
     private static final int APP_VERSION = 1;
     private static final int VALUE_COUNT = 1;
-    private static final String TAG = "DiskLruImageCache";
 
     public DiskLruImageCache(Context context, String uniqueName, int diskCacheSize,
                              Bitmap.CompressFormat compressFormat, int quality ) {
@@ -46,7 +49,7 @@ public class DiskLruImageCache {
             throws IOException, FileNotFoundException {
         OutputStream out = null;
         try {
-            out = new BufferedOutputStream( editor.newOutputStream( 0 ), Utils.IO_BUFFER_SIZE );
+            out = new BufferedOutputStream( editor.newOutputStream( 0 ), FileUtils.IO_BUFFER_SIZE );
             return bitmap.compress( mCompressFormat, mCompressQuality, out );
         } finally {
             if ( out != null ) {
@@ -63,8 +66,8 @@ public class DiskLruImageCache {
         // otherwise use internal cache dir
         final String cachePath =
                 Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) ||
-                        !Utils.isExternalStorageRemovable() ?
-                        Utils.getExternalCacheDir(context).getPath() :
+                        !FileUtils.isExternalStorageRemovable() ?
+                        FileUtils.getExternalCacheDir(context).getPath() :
                         context.getCacheDir().getPath();
 
         return new File(cachePath + File.separator + uniqueName);
@@ -124,7 +127,7 @@ public class DiskLruImageCache {
             final InputStream in = snapshot.getInputStream( 0 );
             if ( in != null ) {
                 final BufferedInputStream buffIn =
-                        new BufferedInputStream( in, Utils.IO_BUFFER_SIZE );
+                        new BufferedInputStream( in, FileUtils.IO_BUFFER_SIZE );
                 bitmap = BitmapFactory.decodeStream( buffIn );
             }
         } catch ( IOException e ) {

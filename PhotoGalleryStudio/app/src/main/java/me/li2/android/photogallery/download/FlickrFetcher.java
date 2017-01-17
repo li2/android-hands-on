@@ -1,7 +1,8 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.download;
 
 import android.content.Context;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.apache.http.HttpResponse;
@@ -26,12 +27,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FlickrFetchr {
-    public static final String TAG = "FlickrFetchr";
-    
-    public static final String PREF_SEARCH_QUERY = "searchQuery";
-    public static final String PREF_LAST_RESULT_ID = "lastResultId";
-    
+import me.li2.android.photogallery.R;
+import me.li2.android.photogallery.model.GalleryItem;
+import me.li2.android.photogallery.util.FileUtils;
+
+/**
+ * Fetch the recent photos list (xml or json) from Flickr
+ * @author weiyi.li
+ */
+public class FlickrFetcher {
+    private static final String TAG = "LI2_FlickrFetcher";
+
     // Flickr recently changed to https, so we need to change http to https.
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
     // The Url to get recent photos on flickr.com
@@ -52,7 +58,7 @@ public class FlickrFetchr {
     private static final String EXTRA_SMALL_URL = "url_s";
     private static final String XML_PHOTO = "photo";
     
-    byte[] getUrlBytes(String urlSpec) throws IOException {
+    public byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         
@@ -85,7 +91,7 @@ public class FlickrFetchr {
     at libcore.net.http.HttpConnection.setupSecureSocket(HttpConnection.java:209)
     ... 修改为以下代码后，就可以下载xml文件了。但用到的API都是deprecated.
      */
-    byte[] getUrlBytes2(String urlSpec) throws IOException {
+    private byte[] getUrlBytesDeprecated(String urlSpec) throws IOException {
         HttpParams params = new BasicHttpParams();
         HttpConnectionParams.setConnectionTimeout(params, 2000);
         HttpConnectionParams.setSoTimeout(params, 20000);
@@ -136,7 +142,7 @@ public class FlickrFetchr {
 
     public List<GalleryItem> fetchItemsFromLocal(Context context, int rawId) {
         List<GalleryItem> items = new ArrayList<>();
-        String jsonString = Utils.loadRawFileToString(context, R.raw.data);
+        String jsonString = FileUtils.loadRawFileToString(context, R.raw.data);
         try {
             parseItems(items, new JSONObject(jsonString));
         } catch (IOException ioe) {
@@ -178,5 +184,43 @@ public class FlickrFetchr {
             item.setUrl(photoJsonObject.getString("url_s"));
             items.add(item);
         }
+    }
+
+
+    private static final String PREF_SEARCH_QUERY = "searchQuery";
+    private static final String PREF_LAST_RESULT_ID = "lastResultId";
+
+    // 存储搜索信息。
+    // 使用shared preferences实现轻量级数据的永久存储；
+    // shared preferences是一种存储key-value的xml文件，可使用SharedPreferences类读写；
+    // 由于其共享于整个应用，所以通常采取下述办法获取具有私有权限与默认名称的实例。
+
+    private static String getPrefValue(Context context, String key) {
+        return PreferenceManager
+                .getDefaultSharedPreferences(context)
+                .getString(key, null);
+    }
+
+    private static void savePrefValue(Context context, String key, String value) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(key, value)
+                .apply();
+    }
+
+    public static String getSearchQuery(Context context) {
+        return getPrefValue(context, PREF_SEARCH_QUERY);
+    }
+
+    public static void saveSearchQuery(Context context, String query) {
+        savePrefValue(context, PREF_SEARCH_QUERY, query);
+    }
+
+    public static String getLastResultId(Context context) {
+        return getPrefValue(context, PREF_LAST_RESULT_ID);
+    }
+
+    public static void saveLastResultId(Context context, String resultId) {
+        savePrefValue(context, PREF_LAST_RESULT_ID, resultId);
     }
 }

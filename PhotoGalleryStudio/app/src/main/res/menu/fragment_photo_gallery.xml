@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="me.li2.android.photogallery.PhotoGalleryActivity" >
+    tools:context="me.li2.android.photogallery.ui.PhotoGalleryActivity" >
 
     <!-- Honeycomb(Android 3.0.x, API=11) 新增加了SearchView类，
     - 它属于操作视图（action view）,可内置于action bar.

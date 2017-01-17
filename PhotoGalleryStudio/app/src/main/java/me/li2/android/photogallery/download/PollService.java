@@ -1,4 +1,4 @@
-package me.li2.android.photogallery;
+package me.li2.android.photogallery.download;
 
 import android.app.AlarmManager;
 import android.app.IntentService;
@@ -7,7 +7,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
@@ -16,8 +15,12 @@ import android.util.Log;
 
 import java.util.List;
 
+import me.li2.android.photogallery.R;
+import me.li2.android.photogallery.model.GalleryItem;
+import me.li2.android.photogallery.ui.PhotoGalleryActivity;
+
 public class PollService extends IntentService {
-    private static final String TAG = "PollService";
+    private static final String TAG = "LI2_PollService";
     
     private static final int POLL_INTERVAL = 1000 * 60 * 5; // 5 minutes
     public static final String PREF_IS_ALARM_ON = "isAlarmOn";
@@ -33,7 +36,7 @@ public class PollService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.i(TAG, "Received an intent: " + intent);
+        Log.d(TAG, "Received an intent: " + intent);
         
         // PollService将在后台查询Flickr，为保证后台网络连接的安全性，需要确认网络连接是否可用。
         ConnectivityManager cm = (ConnectivityManager)
@@ -45,16 +48,15 @@ public class PollService extends IntentService {
             return;
         }
         
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String query = prefs.getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
-        String lastResultId = prefs.getString(FlickrFetchr.PREF_LAST_RESULT_ID, null);
+        String query = FlickrFetcher.getSearchQuery(this);
+        String lastResultId = FlickrFetcher.getLastResultId(this);
         
-        // 使用FlickrFetchr获取最新的图片集。
+        // 使用FlickrFetcher获取最新的图片集。
         List<GalleryItem> items;
         if (query != null) {
-            items = new FlickrFetchr().search(query);
+            items = new FlickrFetcher().search(query);
         } else {
-            items = new FlickrFetchr().fetchItems();
+            items = new FlickrFetcher().fetchItems();
         }
         
         if (items.size() == 0) {
@@ -64,7 +66,7 @@ public class PollService extends IntentService {
         String resultId = items.get(0).getId();
         
         if (!resultId.equals(lastResultId)) {
-            Log.i(TAG, "Got a new result: " + resultId);            
+            Log.d(TAG, "Got a new result: " + resultId);
             // Service可以通过“通知信息”Notification与用户进行信息沟通。
             Resources r = getResources();
             Intent i = new Intent(this, PhotoGalleryActivity.class);
@@ -93,9 +95,7 @@ public class PollService extends IntentService {
         }
         
         // 把最新图片集的第一条ID保存到shared preferences。
-        prefs.edit()
-            .putString(FlickrFetchr.PREF_LAST_RESULT_ID, resultId)
-            .commit();
+        FlickrFetcher.saveLastResultId(this, resultId);
     }
     
     // 当没有activity在运行时，需通过某种方式在后台执行一些任务。比如说，设置一个5分钟间隔的定时器。
@@ -130,7 +130,7 @@ public class PollService extends IntentService {
         PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
             .putBoolean(PollService.PREF_IS_ALARM_ON, isOn)
-            .commit();            
+            .apply();
     }
     
     // 由于在取消Alarm的同时也取消了pi，并且一个PendingIntent只能登记给一个Alarm，
