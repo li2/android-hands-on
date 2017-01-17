@@ -48,10 +48,7 @@ public class CrimePagerActivity  extends AppCompatActivity
             public void onPageSelected(int pos) {
                 Crime crime = mCrimes.get(pos);
                 if (crime.getTitle() != null) {
-                    // setTitle(crime.getTitle());
-                    if (mActionBarTitle != null) {
-                        mActionBarTitle.setText(crime.getTitle());
-                    }
+                    setTitle(crime.getTitle());
                 }
             }
             

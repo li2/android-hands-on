@@ -1,7 +1,27 @@
+# Eclipse
+
 bin/
 gen/
 .classpath
 .project
 .gitignore
 .settings
-Criminal_Intent/project.properties
+
+
+# Android Studio
+
+# Specific files in ALL directories
+*.iml
+.gradle
+.DS_Store
+.externalNativeBuild
+
+local.properties
+build
+captures
+
+# Specific files in ALL specific directories
+/**/.idea/workspace.xml
+/**/.idea/libraries
+/**/.idea/gradle.xml
+/**/.idea/misc.xml
