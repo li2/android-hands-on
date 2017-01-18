@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemConstants;
@@ -46,7 +45,7 @@ public class PhotoAdapter
     private Fragment mAttachedFragment;
     private Context mContext;
     private CacheManager mCacheManager;
-    private GalleryItemProvider mDataProvider;
+    private GalleryItemProvider<PhotoViewHolder> mDataProvider;
 
     public PhotoAdapter(Fragment fragment) {
         mAttachedFragment = fragment;
@@ -111,8 +110,8 @@ public class PhotoAdapter
         return mDataProvider.getItemStableId(position);
     }
 
-    private GalleryItemProvider.OnDataUpdatedListener<ImageView> mOnDataUpdatedListener =
-            new GalleryItemProvider.OnDataUpdatedListener<ImageView>() {
+    private GalleryItemProvider.OnDataUpdatedListener mOnDataUpdatedListener =
+            new GalleryItemProvider.OnDataUpdatedListener<PhotoViewHolder>() {
                 @Override
                 public void onItemsUpdated(List<GalleryItem> items) {
                     if (isFragmentAttached()) {
@@ -120,20 +119,10 @@ public class PhotoAdapter
                     }
                 }
 
-                // 比如，第 1 屏触发了下载，但未下完就滚到了第 2 屏，第 1 屏的图片加载到了第 2 屏上，显示就错了。
-                // ViewHolder 中持有 ImageView，会被循环利用，而图片下载是异步的，
-                // 为了避免下载的图片加载到错误的 ImageView，需要在 bind ViewHolder 时给 imageView 设置一个 tag（url）
-                // 当图片下载完成后，如果 url 和当前的 imageView tag 一致，则显示图片。
-                // 这个验证其实在 ThumbnailDownloader 中已经做了，这里大可不必重复验证。
                 @Override
-                public void onItemThumbnailDownloaded(ImageView imageView, Bitmap thumbnail, String url) {
+                public void onItemThumbnailDownloaded(PhotoViewHolder photoViewHolder, Bitmap thumbnail, String url) {
                     if (isFragmentAttached()) {
-                        String tag = (String)(imageView.getTag());
-                        if (tag.equals(url)) {
-                            imageView.setImageBitmap(thumbnail);
-                        } else {
-                            Log.e(TAG, "NotMatch: " + tag + ", " + url);
-                        }
+                        photoViewHolder.updateImageView(thumbnail, url);
 
                         // Caching bitmap.
                         mCacheManager.addBitmap(url, thumbnail);
@@ -144,8 +133,8 @@ public class PhotoAdapter
     private PhotoViewHolder.RequestImageListener mRequestImageListener =
             new PhotoViewHolder.RequestImageListener() {
                 @Override
-                public void onRequestImage(ImageView imageView, String url) {
-                    mDataProvider.requestItemThumbnail(imageView, url);
+                public void onRequestImage(final PhotoViewHolder photoViewHolder, final String url) {
+                    mDataProvider.requestItemThumbnail(photoViewHolder, url);
                 }
             };
 

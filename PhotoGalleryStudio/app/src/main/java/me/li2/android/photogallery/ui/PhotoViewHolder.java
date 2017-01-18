@@ -36,7 +36,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
     private RequestImageListener mRequestImageListener;
 
     public interface RequestImageListener {
-        void onRequestImage(ImageView imageView, String url);
+        void onRequestImage(final PhotoViewHolder photoViewHolder, final String url);
     }
 
     public PhotoViewHolder(Context context, CacheManager cacheManager, RequestImageListener listener, View itemView) {
@@ -56,13 +56,33 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         // check memory cache.
         Bitmap bitmap = mCacheManager.getBitmapFromMemory(mGalleryItem.getUrl());
         if (bitmap != null) {
-            mImageView.setImageBitmap(bitmap);
+            updateImageView(bitmap);
         } else {
             mImageView.setImageResource(R.drawable.ic_default_photo);
             // check disk cache in a background task
-            BitmapWorkerTask task = new BitmapWorkerTask(mImageView);
+            BitmapWorkerTask task = new BitmapWorkerTask(this);
             task.execute(galleryItem.getUrl());
         }
+    }
+
+    // 比如，第 1 屏触发了下载，但未下完就滚到了第 2 屏，第 1 屏的图片加载到了第 2 屏上，显示就错了。
+    // ViewHolder 中持有 ImageView，会被循环利用，而图片下载是异步的，
+    // 为了避免下载的图片加载到错误的 ImageView，需要在 bind ViewHolder 时给 imageView 设置一个 tag（url）
+    // 当图片下载完成后，如果 url 和当前的 imageView tag 一致，则显示图片。
+    // 这个验证其实在 ThumbnailDownloader 中已经做了，这里大可不必重复验证。
+
+    public void updateImageView(final Bitmap bitmap, final String url) {
+        String latestUrl = (String)(mImageView.getTag());
+
+        if (url == null || latestUrl.equals(url)) {
+            mImageView.setImageBitmap(bitmap);
+        } else {
+            Log.e(TAG, "NotMatch: " + latestUrl + ", " + url);
+        }
+    }
+
+    private void updateImageView(final Bitmap bitmap) {
+        updateImageView(bitmap, null);
     }
 
     @Override
@@ -80,11 +100,11 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
 
     // check disk cache in a background task
     private class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
-        private final WeakReference<ImageView> imageViewReference;
+        private final WeakReference<PhotoViewHolder> photoHolderReference;
         private String url = null;
 
-        public BitmapWorkerTask(ImageView imageView) {
-            imageViewReference = new WeakReference<>(imageView);
+        public BitmapWorkerTask(PhotoViewHolder photoViewHolder) {
+            photoHolderReference = new WeakReference<>(photoViewHolder);
         }
 
         // Decode image in background
@@ -97,7 +117,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
             if (bitmap == null) {
                 // not found in disk cache
                 if (mRequestImageListener != null) {
-                    mRequestImageListener.onRequestImage(imageViewReference.get(), url);
+                    mRequestImageListener.onRequestImage(photoHolderReference.get(), url);
                 }
             }
 
@@ -108,14 +128,8 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             if (bitmap != null) {
-                ImageView imageView = imageViewReference.get();
-
-                String tag = (String)(imageView.getTag());
-                if (tag.equals(url)) {
-                    imageView.setImageBitmap(bitmap);
-                } else {
-                    Log.e(TAG, "NotMatch: " + tag + ", " + url);
-                }
+                PhotoViewHolder photoViewHolder = photoHolderReference.get();
+                photoViewHolder.updateImageView(bitmap, url);
             }
         }
     }
