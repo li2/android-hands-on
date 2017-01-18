@@ -158,6 +158,8 @@ public class FlickrFetcher {
         String url = Uri.parse(ENDPOINT).buildUpon()
                 .appendQueryParameter("method", METHOD_SEARCH)
                 .appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("format", "json")
+                .appendQueryParameter("nojsoncallback", "1")
                 .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
                 .appendQueryParameter(PARAM_TEXT, query)
                 .build().toString();
@@ -165,7 +167,7 @@ public class FlickrFetcher {
         return downloadGalleryItems(url);
     }
     
-    void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException, IOException {
+    private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException, IOException {
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
 

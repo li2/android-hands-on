@@ -38,7 +38,7 @@ public class PhotoAdapter
     private static final String TAG = "L_PhotoAdapter";
 
     // just for testing disk cache
-    private static final boolean FETCH_ITEMS_FROM_LOCAL_JSON = true;
+    private static final boolean FETCH_ITEMS_FROM_LOCAL_JSON = false;
 
     // Horizon orientation with 4 columns
     private static final int LAYOUT_COLUMNS_NUMBER = 4;
@@ -118,6 +118,7 @@ public class PhotoAdapter
                     Log.d(TAG, "Fetch items from local json file.");
                     return new FlickrFetcher().fetchItemsFromLocal(mContext, R.raw.data);
                 } else {
+                    Log.d(TAG, "Fetch items from Flickr.");
                     return new FlickrFetcher().fetchItems();
                 }
             }
