@@ -48,7 +48,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
     // 所以我们需要提供一个public方法，以供activity刷新fragment。
     public void updateItems() {
         if (mPhotoAdapter != null) {
-            mPhotoAdapter.updateItems();
+            mPhotoAdapter.updateData();
         }
     }
 
@@ -81,7 +81,6 @@ public class PhotoGalleryFragment extends VisibleFragment {
 
         // setup RecyclerView adapter
         mPhotoAdapter = new PhotoAdapter(this);
-        mPhotoRecyclerView.setAdapter(mPhotoAdapter);
 
         createDragDropManager();
 
@@ -98,8 +97,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
     public void onDestroy() {
         super.onDestroy();
         if (mPhotoAdapter != null) {
-            // 需要终止HandlerThread，否则它会一直运行下去。
-            mPhotoAdapter.stopThumbDownloadThread();
+            mPhotoAdapter.destroy();
             mPhotoAdapter = null;
         }
 
@@ -191,7 +189,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
     }
 
 
-    // -------- Draggable -----------------------------------------------------
+    //-------- Draggable ------------------------------------------------------
 
     private static final int ITEM_DRAG_MODE = RecyclerViewDragDropManager.ITEM_MOVE_MODE_SWAP;
     private static final int ITEM_DRAG_SHADOW_DRAWABLE = R.drawable.material_shadow_z3;

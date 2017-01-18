@@ -175,6 +175,7 @@ public class FlickrFetcher {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
 
             GalleryItem item = new GalleryItem();
+            item.setStableId(i);
             item.setId(photoJsonObject.getString("id"));
             item.setOwner(photoJsonObject.getString("owner"));
             item.setCaption(photoJsonObject.getString("title"));

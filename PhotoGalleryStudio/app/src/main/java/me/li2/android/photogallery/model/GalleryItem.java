@@ -1,6 +1,7 @@
 package me.li2.android.photogallery.model;
 
 public class GalleryItem {
+    private int mStableId; // DraggableItemAdapter requires stable ID
     private String mCaption;
     private String mId;
     private String mUrl;
@@ -8,6 +9,14 @@ public class GalleryItem {
     
     public String toString() {
         return mCaption;
+    }
+
+    public int getStableId() {
+        return mStableId;
+    }
+
+    public void setStableId(int stableId) {
+        mStableId = stableId;
     }
 
     public String getCaption() {

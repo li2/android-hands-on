@@ -114,7 +114,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
                 if (tag.equals(url)) {
                     imageView.setImageBitmap(bitmap);
                 } else {
-                    Log.e(TAG, "NOTEQUAL-readDiskCacheTask: " + tag + ", " + url);
+                    Log.e(TAG, "NotMatch: " + tag + ", " + url);
                 }
             }
         }
