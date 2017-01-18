@@ -5,8 +5,10 @@ import android.app.SearchableInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -17,6 +19,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SearchView;
+
+import com.h6ah4i.android.widget.advrecyclerview.animator.DraggableItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
+import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 
 import me.li2.android.photogallery.R;
 import me.li2.android.photogallery.download.FlickrFetcher;
@@ -76,9 +83,17 @@ public class PhotoGalleryFragment extends VisibleFragment {
         mPhotoAdapter = new PhotoAdapter(this);
         mPhotoRecyclerView.setAdapter(mPhotoAdapter);
 
+        createDragDropManager();
+
         return view;
     }
-    
+
+    @Override
+    public void onPause() {
+        cancelDrag();
+        super.onPause();
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -87,6 +102,14 @@ public class PhotoGalleryFragment extends VisibleFragment {
             mPhotoAdapter.stopThumbDownloadThread();
             mPhotoAdapter = null;
         }
+
+        if (mPhotoRecyclerView != null) {
+            mPhotoRecyclerView.setItemAnimator(null);
+            mPhotoRecyclerView.setAdapter(null);
+            mPhotoRecyclerView = null;
+        }
+
+        destroyDragDropManager();
     }
 
     // 添加选项菜单的回调方法 Options menu callbacks:
@@ -165,5 +188,75 @@ public class PhotoGalleryFragment extends VisibleFragment {
         } else {
             toggleItem.setTitle(R.string.start_polling);
         }
+    }
+
+
+    // -------- Draggable -----------------------------------------------------
+
+    private static final int ITEM_DRAG_MODE = RecyclerViewDragDropManager.ITEM_MOVE_MODE_SWAP;
+    private static final int ITEM_DRAG_SHADOW_DRAWABLE = R.drawable.material_shadow_z3;
+    private static final int ITEM_DRAG_ANIMATION_DURATION = 500;
+    private static final float ITEM_DRAG_ALPHA = 1.0f;
+    private static final float ITEM_DRAG_SCALE = 1.2f;
+    private static final float ITEM_DRAG_ROTATION = 0.0f;
+
+    private RecyclerView.Adapter mWrappedAdapter;
+    private RecyclerViewDragDropManager mDragDropManager;
+
+    private void createDragDropManager() {
+        // create drag & drop manager
+        mDragDropManager = new RecyclerViewDragDropManager();
+
+        // start dragging after long press
+        mDragDropManager.setInitiateOnLongPress(true);
+        mDragDropManager.setInitiateOnMove(false);
+        mDragDropManager.setLongPressTimeout(750);
+
+        // setup dragging item effects
+        mDragDropManager.setDraggingItemShadowDrawable(
+                (NinePatchDrawable) ContextCompat.getDrawable(getContext(), ITEM_DRAG_SHADOW_DRAWABLE));
+        mDragDropManager.setDragStartItemAnimationDuration(ITEM_DRAG_ANIMATION_DURATION);
+        mDragDropManager.setDraggingItemAlpha(ITEM_DRAG_ALPHA);
+        mDragDropManager.setDraggingItemScale(ITEM_DRAG_SCALE);
+        mDragDropManager.setDraggingItemRotation(ITEM_DRAG_ROTATION);
+        mDragDropManager.setItemMoveMode(ITEM_DRAG_MODE);
+        // DraggableItemAnimator is required to make item animations properly.
+        GeneralItemAnimator animator = new DraggableItemAnimator();
+        mPhotoRecyclerView.setItemAnimator(animator);
+
+        // requires *wrapped* adapter for dragging
+        mWrappedAdapter = mDragDropManager.createWrappedAdapter(mPhotoAdapter);
+        mPhotoRecyclerView.setAdapter(mWrappedAdapter);
+
+        // attach the manager to RecyclerView
+        mDragDropManager.attachRecyclerView(mPhotoRecyclerView);
+
+        // also tell the item drag mode to PhotoAdapter
+        mPhotoAdapter.setItemMoveMode(ITEM_DRAG_MODE);
+    }
+
+    private void destroyDragDropManager() {
+        if (mDragDropManager != null) {
+            mDragDropManager.release();
+            mDragDropManager = null;
+        }
+
+        if (mWrappedAdapter != null) {
+            WrapperAdapterUtils.releaseAll(mWrappedAdapter);
+            mWrappedAdapter = null;
+        }
+    }
+
+    private void cancelDrag() {
+        if (mDragDropManager != null) {
+            mDragDropManager.cancelDrag();
+        }
+    }
+
+    protected boolean isDragging() {
+        if (mDragDropManager != null) {
+            return mDragDropManager.isDragging();
+        }
+        return false;
     }
 }

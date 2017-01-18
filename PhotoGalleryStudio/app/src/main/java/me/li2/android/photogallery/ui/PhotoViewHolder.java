@@ -5,19 +5,18 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder;
 
 import java.lang.ref.WeakReference;
 
 import me.li2.android.photogallery.R;
 import me.li2.android.photogallery.cache.CacheManager;
 import me.li2.android.photogallery.model.GalleryItem;
-
-import static com.android.volley.VolleyLog.TAG;
 
 /**
  * PhotoViewHolder
@@ -27,8 +26,9 @@ import static com.android.volley.VolleyLog.TAG;
  * Created on 17/01/2017.
  */
 
-public class PhotoViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener
+public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements View.OnClickListener
 {
+    private static final String TAG = "L_PhotoViewHolder";
     private Context mContext;
     private CacheManager mCacheManager;
     private ImageView mImageView;
@@ -58,7 +58,7 @@ public class PhotoViewHolder extends RecyclerView.ViewHolder implements View.OnC
         if (bitmap != null) {
             mImageView.setImageBitmap(bitmap);
         } else {
-            mImageView.setImageResource(R.drawable.ic_photo);
+            mImageView.setImageResource(R.drawable.ic_default_photo);
             // check disk cache in a background task
             BitmapWorkerTask task = new BitmapWorkerTask(mImageView);
             task.execute(galleryItem.getUrl());

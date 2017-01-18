@@ -15,6 +15,11 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemConstants;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
+
 import java.util.List;
 
 import me.li2.android.photogallery.R;
@@ -34,6 +39,7 @@ import me.li2.android.photogallery.model.GalleryItem;
 
 public class PhotoAdapter
         extends RecyclerView.Adapter<PhotoViewHolder>
+        implements DraggableItemAdapter<PhotoViewHolder>
 {
     private static final String TAG = "L_PhotoAdapter";
 
@@ -58,6 +64,10 @@ public class PhotoAdapter
         mCacheManager = new CacheManager(mContext);
         updateItems();
         startThumbDownloadThread();
+
+        // DraggableItemAdapter requires stable ID, and also
+        // have to implement the Adapter.getItemId() method appropriately.
+        setHasStableIds(true);
     }
 
     @Override
@@ -182,5 +192,48 @@ public class PhotoAdapter
 
     private boolean isFragmentAttached() {
         return (mAttachedFragment != null && mAttachedFragment.getActivity() != null);
+    }
+
+
+    // -------- Draggable -----------------------------------------------------
+
+    private int mItemMoveMode = RecyclerViewDragDropManager.ITEM_MOVE_MODE_DEFAULT;
+
+    public void setItemMoveMode(int itemMoveMode) {
+        mItemMoveMode = itemMoveMode;
+    }
+
+    // NOTE: Make accessible with short name
+    private interface Draggable extends DraggableItemConstants {
+    }
+
+    @Override
+    public void onMoveItem(int fromPosition, int toPosition) {
+        Log.d(TAG, "onMoveItem(fromPosition = " + fromPosition + ", toPosition = " + toPosition + ")");
+
+        if (fromPosition == toPosition) {
+            return;
+        }
+
+        if (mItemMoveMode == RecyclerViewDragDropManager.ITEM_MOVE_MODE_DEFAULT) {
+            notifyItemMoved(fromPosition, toPosition);
+        } else {
+            notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public boolean onCheckCanStartDrag(PhotoViewHolder holder, int position, int x, int y) {
+        return true;
+    }
+
+    @Override
+    public boolean onCheckCanDrop(int draggingPosition, int dropPosition) {
+        return true;
+    }
+
+    @Override
+    public ItemDraggableRange onGetItemDraggableRange(PhotoViewHolder holder, int position) {
+        return null;
     }
 }

@@ -25,4 +25,7 @@ dependencies {
     compile 'com.mcxiaoke.volley:library:1.0.17'
     compile 'com.android.support:recyclerview-v7:+'
     compile 'com.jakewharton:disklrucache:2.0.2'
+    compile ('com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:0.10.2@aar'){
+        transitive=true
+    }
 }
