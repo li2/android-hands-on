@@ -20,7 +20,7 @@ import me.li2.android.photogallery.model.GalleryItem;
 import me.li2.android.photogallery.ui.PhotoGalleryActivity;
 
 public class PollService extends IntentService {
-    private static final String TAG = "LI2_PollService";
+    private static final String TAG = "L_PollService";
     
     private static final int POLL_INTERVAL = 1000 * 60 * 5; // 5 minutes
     public static final String PREF_IS_ALARM_ON = "isAlarmOn";

@@ -35,7 +35,7 @@ import me.li2.android.photogallery.model.GalleryItem;
 public class PhotoAdapter
         extends RecyclerView.Adapter<PhotoViewHolder>
 {
-    private static final String TAG = "LI2_PhotoAdapter";
+    private static final String TAG = "L_PhotoAdapter";
 
     // just for testing disk cache
     private static final boolean FETCH_ITEMS_FROM_LOCAL_JSON = true;

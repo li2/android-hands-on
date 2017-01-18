@@ -25,7 +25,7 @@ import me.li2.android.photogallery.ui.basic.VisibleFragment;
 import me.li2.android.photogallery.ui.widget.RecyclerViewMarginDecoration;
 
 public class PhotoGalleryFragment extends VisibleFragment {
-    private static final String TAG = "LI2_PhotoGalleryFragment";
+    private static final String TAG = "L_PhotoGalleryFragment";
 
     private RecyclerView mPhotoRecyclerView;
     private PhotoAdapter mPhotoAdapter;

@@ -11,7 +11,7 @@ import me.li2.android.photogallery.R;
 import me.li2.android.photogallery.ui.basic.SingleFragmentActivity;
 
 public class PhotoGalleryActivity extends SingleFragmentActivity {
-    private static final String TAG = "LI2_PhotoGalleryActivity";
+    private static final String TAG = "L_PhotoGalleryActivity";
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {

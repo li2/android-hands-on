@@ -24,7 +24,7 @@ import me.li2.android.photogallery.util.FileUtils;
  * http://stackoverflow.com/questions/10185898/using-disklrucache-in-android-4-0-does-not-provide-for-opencache-method
  */
 public class DiskLruImageCache {
-    private static final String TAG = "LI2_DiskLruImageCache";
+    private static final String TAG = "L_DiskLruImageCache";
 
     private DiskLruCache mDiskCache;
     private Bitmap.CompressFormat mCompressFormat = Bitmap.CompressFormat.JPEG;

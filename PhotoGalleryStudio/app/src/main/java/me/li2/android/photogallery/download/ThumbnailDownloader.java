@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ThumbnailDownloader<Token> extends HandlerThread {
-    private static final String TAG = "LI2_ThumbnailDownloader";
+    private static final String TAG = "L_ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
     
     private Handler mHandler;

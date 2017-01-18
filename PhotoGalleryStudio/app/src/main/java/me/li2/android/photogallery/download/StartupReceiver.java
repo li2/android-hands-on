@@ -8,7 +8,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class StartupReceiver extends BroadcastReceiver {
-    private static final String TAG = "LI2_StartupReceiver";
+    private static final String TAG = "L_StartupReceiver";
     
     // 在配置文件中完成声明后，即使app未运行，只要有匹配的broadcast intent发来，
     // broadcast receiver就会接收，onReceive方法就被调到，

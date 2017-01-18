@@ -36,7 +36,7 @@ import me.li2.android.photogallery.util.FileUtils;
  * @author weiyi.li
  */
 public class FlickrFetcher {
-    private static final String TAG = "LI2_FlickrFetcher";
+    private static final String TAG = "L_FlickrFetcher";
 
     // Flickr recently changed to https, so we need to change http to https.
     // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
