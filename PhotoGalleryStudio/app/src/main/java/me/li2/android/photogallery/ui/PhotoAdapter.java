@@ -122,7 +122,7 @@ public class PhotoAdapter
                 @Override
                 public void onItemThumbnailDownloaded(PhotoViewHolder photoViewHolder, Bitmap thumbnail, String url) {
                     if (isFragmentAttached()) {
-                        photoViewHolder.updateImageView(thumbnail, url);
+                        photoViewHolder.updateImageView(PhotoViewHolder.IndicatorType.INTERNET, thumbnail, url);
 
                         // Caching bitmap.
                         mCacheManager.addBitmap(url, thumbnail);

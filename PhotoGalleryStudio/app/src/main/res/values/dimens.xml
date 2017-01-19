@@ -4,5 +4,7 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="recycler_view_item_margin">4dp</dimen>
+    <dimen name="recycler_view_item_indicator_height">24dp</dimen>
+    <dimen name="recycler_view_item_indicator_text_size">18sp</dimen>
 
 </resources>

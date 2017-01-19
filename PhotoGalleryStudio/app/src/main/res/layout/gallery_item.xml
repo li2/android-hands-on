@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<me.li2.android.photogallery.ui.widget.ForegroundImageView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:contentDescription="@string/app_name"
-    android:id="@+id/gallery_item_imageView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:foreground="?android:attr/selectableItemBackground"
-    android:background="@drawable/recycler_placeholder_background"
-    android:scaleType="centerCrop" >
-</me.li2.android.photogallery.ui.widget.ForegroundImageView>
+    android:layout_height="match_parent">
+
+    <me.li2.android.photogallery.ui.widget.ForegroundImageView
+        android:id="@+id/gallery_item_imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:background="@drawable/recycler_placeholder_background"
+        android:scaleType="centerCrop" >
+    </me.li2.android.photogallery.ui.widget.ForegroundImageView>
+
+    <TextView
+        android:id="@+id/gallery_item_indicator"
+        android:layout_width="@dimen/recycler_view_item_indicator_height"
+        android:layout_height="@dimen/recycler_view_item_indicator_height"
+        android:layout_gravity="left|top"
+        android:gravity="center"
+        android:background="@android:color/holo_blue_dark"
+        android:textSize="@dimen/recycler_view_item_indicator_text_size"
+        android:textColor="@android:color/holo_red_dark"
+        android:alpha="0.6"
+        />
+
+</FrameLayout>
+

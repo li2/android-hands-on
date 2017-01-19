@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder;
@@ -32,8 +33,16 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
     private Context mContext;
     private CacheManager mCacheManager;
     private ImageView mImageView;
+    private TextView mImageIndicator;
     private GalleryItem mGalleryItem;
     private RequestImageListener mRequestImageListener;
+
+    public enum IndicatorType {
+        DEFAULT,
+        MEMORY_CACHE,
+        DISK_CACHE,
+        INTERNET,
+    }
 
     public interface RequestImageListener {
         void onRequestImage(final PhotoViewHolder photoViewHolder, final String url);
@@ -44,6 +53,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         mContext = context;
         mCacheManager = cacheManager;
         mImageView = (ImageView) itemView.findViewById(R.id.gallery_item_imageView);
+        mImageIndicator = (TextView) itemView.findViewById(R.id.gallery_item_indicator);
         mImageView.setOnClickListener(this);
         mRequestImageListener = listener;
     }
@@ -56,7 +66,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         // check memory cache.
         Bitmap bitmap = mCacheManager.getBitmapFromMemory(mGalleryItem.getUrl());
         if (bitmap != null) {
-            updateImageView(bitmap);
+            updateImageView(IndicatorType.MEMORY_CACHE, bitmap);
         } else {
             // check disk cache in a background task
             BitmapWorkerTask task = new BitmapWorkerTask(this);
@@ -70,22 +80,41 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
     // 当图片下载完成后，如果 url 和当前的 imageView tag 一致，则显示图片。
     // 这个验证其实在 ThumbnailDownloader 中已经做了，这里大可不必重复验证。
 
-    public void updateImageView(final Bitmap bitmap, final String url) {
+    public void updateImageView(final IndicatorType type, final Bitmap bitmap, final String url) {
         String latestUrl = (String)(mImageView.getTag());
 
         if (url == null || latestUrl.equals(url)) {
             mImageView.setImageBitmap(bitmap);
+            updateImageIndicator(type);
         } else {
             Log.e(TAG, "NotMatch: " + latestUrl + ", " + url);
         }
     }
 
-    private void updateImageView(final Bitmap bitmap) {
-        updateImageView(bitmap, null);
+    private void updateImageView(IndicatorType type, Bitmap bitmap) {
+        updateImageView(type, bitmap, null);
     }
 
     private void resetImageView() {
         mImageView.setImageResource(R.drawable.ic_default_photo);
+        updateImageIndicator(IndicatorType.DEFAULT);
+    }
+
+    private void updateImageIndicator(IndicatorType type) {
+        String indicator = "";
+        switch (type) {
+            case MEMORY_CACHE:
+                indicator = "M";
+                break;
+            case DISK_CACHE:
+                indicator = "D";
+                break;
+            case INTERNET:
+                indicator = "I";
+                break;
+        }
+        mImageIndicator.setVisibility(indicator.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+        mImageIndicator.setText(indicator);
     }
 
     @Override
@@ -134,7 +163,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
 
             if (photoViewHolder != null) {
                 if (bitmap != null) {
-                    photoViewHolder.updateImageView(bitmap, url);
+                    photoViewHolder.updateImageView(IndicatorType.DISK_CACHE, bitmap, url);
                 } else {
                     photoViewHolder.resetImageView();
                 }
