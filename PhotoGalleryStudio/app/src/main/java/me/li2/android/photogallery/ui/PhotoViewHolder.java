@@ -58,7 +58,6 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         if (bitmap != null) {
             updateImageView(bitmap);
         } else {
-            mImageView.setImageResource(R.drawable.ic_default_photo);
             // check disk cache in a background task
             BitmapWorkerTask task = new BitmapWorkerTask(this);
             task.execute(galleryItem.getUrl());
@@ -83,6 +82,10 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
 
     private void updateImageView(final Bitmap bitmap) {
         updateImageView(bitmap, null);
+    }
+
+    private void resetImageView() {
+        mImageView.setImageResource(R.drawable.ic_default_photo);
     }
 
     @Override
@@ -127,9 +130,14 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
-            if (bitmap != null) {
-                PhotoViewHolder photoViewHolder = photoHolderReference.get();
-                photoViewHolder.updateImageView(bitmap, url);
+            PhotoViewHolder photoViewHolder = photoHolderReference.get();
+
+            if (photoViewHolder != null) {
+                if (bitmap != null) {
+                    photoViewHolder.updateImageView(bitmap, url);
+                } else {
+                    photoViewHolder.resetImageView();
+                }
             }
         }
     }
