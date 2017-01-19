@@ -72,6 +72,10 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
             BitmapWorkerTask task = new BitmapWorkerTask(this);
             task.execute(galleryItem.getUrl());
         }
+
+        if (galleryItem.getUrl() == null || galleryItem.getUrl().isEmpty()) {
+            mImageIndicator.setText(""+galleryItem.getStableId());
+        }
     }
 
     // 比如，第 1 屏触发了下载，但未下完就滚到了第 2 屏，第 1 屏的图片加载到了第 2 屏上，显示就错了。

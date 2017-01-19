@@ -45,6 +45,7 @@ public class GalleryItemProvider<T>
     public GalleryItemProvider(Context context, OnDataUpdatedListener listener) {
         mContext = context;
         mOnDataUpdatedListener = listener;
+        createFakeData();
         startItemThumbnailDownload();
     }
 
@@ -160,5 +161,17 @@ public class GalleryItemProvider<T>
 
     public void requestItemThumbnail(T target, String url) {
         mThumbDownloadThread.queueThumbnail(target, url);
+    }
+
+    private void createFakeData() {
+        for (int i = 0; i < 16; i++) {
+            GalleryItem item = new GalleryItem();
+            item.setStableId(i);
+            mItems.add(item);
+        }
+
+        if (mOnDataUpdatedListener != null) {
+            mOnDataUpdatedListener.onItemsUpdated(mItems);
+        }
     }
 }

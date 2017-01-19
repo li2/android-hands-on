@@ -6,6 +6,14 @@ public class GalleryItem {
     private String mId;
     private String mUrl;
     private String mOwner;
+
+    public GalleryItem() {
+        mStableId = 0;
+        mCaption = "";
+        mId = "";
+        mUrl = "";
+        mOwner = "";
+    }
     
     public String toString() {
         return mCaption;
