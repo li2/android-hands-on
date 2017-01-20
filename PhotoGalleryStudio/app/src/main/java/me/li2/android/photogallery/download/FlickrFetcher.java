@@ -57,10 +57,20 @@ public class FlickrFetcher {
     
     private static final String EXTRA_SMALL_URL = "url_s";
     private static final String XML_PHOTO = "photo";
-    
+
+    // exception:
+    // javax.net.ssl.SSLHandshakeException:
+    // java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
+    // java.io.FileNotFoundException:
+    // java.net.UnknownHostException: Unable to resolve host "api.flickr.com": No address associated with hostname
+    // java.net.ConnectException: failed to connect to api...: connect failed: ETIMEDOUT (Connection timed out)
+    // Flickr is blocked by GFW, so the ETIMEDOUT exception is thrown. Open the link in PC/Phone browser to double check.
+
     public byte[] getUrlBytes(String urlSpec) throws IOException {
+        Log.d(TAG, "getUrlBytes urlSpec: " + urlSpec);
         URL url = new URL(urlSpec);
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        connection.setConnectTimeout(5000);
         
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -77,7 +87,9 @@ public class FlickrFetcher {
             }
             out.close();
             return out.toByteArray();
-        
+        } catch (Exception e) {
+            Log.e(TAG, "getUrlBytes exception: " + e);
+            return null;
         } finally {
             connection.disconnect();
         }
@@ -108,7 +120,11 @@ public class FlickrFetcher {
     }
 
     public String getUrl(String urlSpec) throws IOException {
-        return new String(getUrlBytes(urlSpec));
+        byte[] bytes = getUrlBytes(urlSpec);
+        if (bytes != null) {
+            return new String(bytes);
+        }
+        return null;
     }
 
     // Search和getRecent命令获取的xml格式一致，因此可以使用相同的代码解析。
@@ -117,8 +133,10 @@ public class FlickrFetcher {
 
         try {
             String jsonString = getUrl(url);
-            Log.d(TAG, "Received json string: " + jsonString);
-            parseItems(items, new JSONObject(jsonString));
+            if (jsonString != null) {
+                Log.d(TAG, "Received json string: " + jsonString);
+                parseItems(items, new JSONObject(jsonString));
+            }
         } catch (IOException ioe) {
             Log.e(TAG, "Failed to fetch items", ioe);
         } catch (JSONException je) {

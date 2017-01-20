@@ -109,6 +109,9 @@ public class ThumbnailDownloader<T> extends HandlerThread {
             }
 
             byte[] bitmapBytes = new FlickrFetcher().getUrlBytes(url);
+            if (bitmapBytes == null) {
+                return;
+            }
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
             Log.d(TAG, "Bitmap created");
 
@@ -133,7 +136,8 @@ public class ThumbnailDownloader<T> extends HandlerThread {
             });
             
         } catch (IOException ioe) {
-            Log.e(TAG, "Error downloading image", ioe);
+            // java.net.MalformedURLException: Protocol not found: at java.net.URL.<init>
+            Log.e(TAG, "downloading image exception: " + ioe);
         }
     }
     

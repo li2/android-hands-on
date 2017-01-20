@@ -97,6 +97,7 @@ public class GalleryItemProvider<T>
     //-------- Items update thread --------------------------------------------
 
     public void updateData() {
+        Log.d(TAG, "execute FetchItemsTask");
         new FetchItemsTask().execute();
     }
 
@@ -130,6 +131,12 @@ public class GalleryItemProvider<T>
 
         @Override
         protected void onPostExecute(List<GalleryItem> items) {
+            notifyItemsUpdated(items);
+        }
+    }
+
+    private void notifyItemsUpdated(List<GalleryItem> items) {
+        if (items != null) {
             mItems = items;
             if (mOnDataUpdatedListener != null) {
                 mOnDataUpdatedListener.onItemsUpdated(items);
