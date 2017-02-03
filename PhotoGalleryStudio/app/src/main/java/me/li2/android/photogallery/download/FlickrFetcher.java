@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -191,18 +193,22 @@ public class FlickrFetcher {
 
         for (int i=0; i<photoJsonArray.length(); i++) {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
-
+            /*
             GalleryItem item = new GalleryItem();
             item.setStableId(i);
             item.setId(photoJsonObject.getString("id"));
             item.setOwner(photoJsonObject.getString("owner"));
-            item.setCaption(photoJsonObject.getString("title"));
+            item.setTitle(photoJsonObject.getString("title"));
 
             if (!photoJsonObject.has("url_s")) {
                 return;
             }
 
             item.setUrl(photoJsonObject.getString("url_s"));
+            */
+            Gson gson = new Gson();
+            GalleryItem item = gson.fromJson(photoJsonObject.toString(), GalleryItem.class);
+            item.setStableId(i);
             items.add(item);
         }
     }

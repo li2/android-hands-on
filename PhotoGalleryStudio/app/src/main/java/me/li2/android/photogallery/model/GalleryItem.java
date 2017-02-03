@@ -1,66 +1,72 @@
 package me.li2.android.photogallery.model;
 
+import android.util.Log;
+
 public class GalleryItem {
-    private int mStableId; // DraggableItemAdapter requires stable ID
-    private String mCaption;
-    private String mId;
-    private String mUrl;
-    private String mOwner;
+    private int stableId; // DraggableItemAdapter requires stable ID
+    private String title;
+    private String id;
+    private String url_s;
+    private String owner;
 
     public GalleryItem() {
-        mStableId = 0;
-        mCaption = "";
-        mId = "";
-        mUrl = "";
-        mOwner = "";
+        stableId = 0;
+        title = "";
+        id = "";
+        url_s = "";
+        owner = "";
     }
     
     public String toString() {
-        return mCaption;
+        return title;
     }
 
     public int getStableId() {
-        return mStableId;
+        return stableId;
     }
 
     public void setStableId(int stableId) {
-        mStableId = stableId;
+        this.stableId = stableId;
     }
 
-    public String getCaption() {
-        return mCaption;
+    public String getTitle() {
+        return title;
     }
 
-    public void setCaption(String caption) {
-        mCaption = caption;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getId() {
-        return mId;
+        return id;
     }
 
     public void setId(String id) {
-        mId = id;
+        this.id = id;
     }
 
     public String getUrl() {
-        return mUrl;
+        return url_s;
     }
 
     public void setUrl(String url) {
-        mUrl = url;
+        url_s = url;
     }
 
     public String getOwner() {
-        return mOwner;
+        return owner;
     }
     
     public void setOwner(String owner) {
-        mOwner = owner;
+        this.owner = owner;
     }
     
     // Build photo page url from XML base on Flickr's doc.
     public String getPhotoPageUrl() {
-        return "http://www.flickr.com/photos/" + mOwner + "/" + mId;
+        return "http://www.flickr.com/photos/" + owner + "/" + id;
+    }
+
+    public void print() {
+        Log.i("GalleryItem", "stableId " + stableId + ", url_s " + url_s);
     }
 }
