@@ -121,10 +121,10 @@ public class GalleryItemProvider<T>
             } else {
                 if (FETCH_ITEMS_FROM_LOCAL_JSON) {
                     Log.d(TAG, "Fetch items from local json file.");
-                    return new FlickrFetcher().fetchItemsFromLocal(mContext, R.raw.data);
+                    return new FlickrFetcher().getItemsFromLocal(mContext, R.raw.data);
                 } else {
                     Log.d(TAG, "Fetch items from Flickr.");
-                    return new FlickrFetcher().fetchItems();
+                    return new FlickrFetcher().getRecent();
                 }
             }
         }

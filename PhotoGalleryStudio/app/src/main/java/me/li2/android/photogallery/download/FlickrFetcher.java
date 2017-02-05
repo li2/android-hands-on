@@ -1,64 +1,42 @@
 package me.li2.android.photogallery.download;
 
 import android.content.Context;
-import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.gson.Gson;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.ssl.HttpsURLConnection;
+
 import me.li2.android.photogallery.R;
 import me.li2.android.photogallery.model.GalleryItem;
 import me.li2.android.photogallery.util.FileUtils;
+import me.li2.android.photogallery.util.IOUtils;
 
 /**
  * Fetch the recent photos list (xml or json) from Flickr
+ *
+ * Android 6.0 (API level 23) release removes support for the Apache HTTP client.
+ * If your app is using this client and targets Android 2.3 (API level 9) or higher,
+ * use HttpsURLConnection class instead.
+ *
+ * flickr.com recently changed to https, so we need to change http to https.
+ * http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
+ *
  * @author weiyi.li
  */
 public class FlickrFetcher {
     private static final String TAG = "L_FlickrFetcher";
-
-    // Flickr recently changed to https, so we need to change http to https.
-    // http://forums.bignerdranch.com/viewtopic.php?f=423&t=8944
-    // The Url to get recent photos on flickr.com
-    // https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s
-
-    // 上述url获取的是xml文件，加上 &format=json&nojsoncallback=1 可以获取json文件：
-    // https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s&format=json&nojsoncallback=1
-
-    // The Url to search text such as "android" on flickr.com
-    // https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=5213808bcc415d5632a3dedfcd9a8ac2&extras=url_s&text=android
-    private static final String ENDPOINT = "https://api.flickr.com/services/rest/";
-    private static final String API_KEY = "5213808bcc415d5632a3dedfcd9a8ac2";
-    private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
-    private static final String METHOD_SEARCH = "flickr.photos.search";
-    private static final String PARAM_EXTRAS = "extras";
-    private static final String PARAM_TEXT = "text"; 
-    
-    private static final String EXTRA_SMALL_URL = "url_s";
-    private static final String XML_PHOTO = "photo";
 
     // exception:
     // javax.net.ssl.SSLHandshakeException:
@@ -68,73 +46,71 @@ public class FlickrFetcher {
     // java.net.ConnectException: failed to connect to api...: connect failed: ETIMEDOUT (Connection timed out)
     // Flickr is blocked by GFW, so the ETIMEDOUT exception is thrown. Open the link in PC/Phone browser to double check.
 
+    /**
+     * Take the given URL and use it to perform an HTTP GET request,
+     * sets up a connection and gets the HTTP response body from the server.
+     * If the network request is successful, it returns the response body in byte[] form. Otherwise,
+     * it will throw an IOException.
+     */
     public byte[] getUrlBytes(String urlSpec) throws IOException {
         Log.d(TAG, "getUrlBytes urlSpec: " + urlSpec);
+        InputStream inputStream = null;
+        HttpsURLConnection connection = null;
+        byte[] result = null;
         URL url = new URL(urlSpec);
-        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-        connection.setConnectTimeout(5000);
-        
+
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            InputStream in = connection.getInputStream();
-            
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new IOException(connection.getResponseMessage() + ": with " + urlSpec);
+            connection = (HttpsURLConnection)url.openConnection();
+            // Timeout for reading InputStream
+            connection.setReadTimeout(3000);
+            // Timeout for connection.connect()
+            connection.setConnectTimeout(5000);
+            // For this use case, set HTTP method to GET.
+            connection.setRequestMethod("GET");
+            // Already true by default but setting just in case; needs to be true since this request
+            // is carrying an input (response) body.
+            connection.setDoInput(true);
+            // Open communications link (network traffic occurs here).
+            connection.connect();
+
+            // getResponseCode() is a useful way of getting additional information about the connection.
+            // A status code of 200 indicates success.
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpsURLConnection.HTTP_OK) {
+                throw new IOException("HTTP error code: " + responseCode + " with " + urlSpec);
             }
-            
-            int bytesRead = 0;
-            byte[] buffer = new byte[1024];
-            while ((bytesRead = in.read(buffer)) > 0) {
-                out.write(buffer, 0, bytesRead);
+
+            // Retrieve the response body as an InputStream.
+            inputStream = connection.getInputStream();
+            if (inputStream != null) {
+                // Converts Stream to byte[]
+                result = IOUtils.readBytes(inputStream);
             }
-            out.close();
-            return out.toByteArray();
         } catch (Exception e) {
             Log.e(TAG, "getUrlBytes exception: " + e);
-            return null;
         } finally {
-            connection.disconnect();
+            // Close Stream and disconnect HTTPS connection.
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
-    }
-    
-    /*
-    getUrlBytes()在LG G3(5.1)可以正常工作，但在荣耀3c(4.2.2)上抛出如下异常：
-    java.net.SocketException: Socket is closed
-    at org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.checkOpen(OpenSSLSocketImpl.java:232)
-    at org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.startHandshake(OpenSSLSocketImpl.java:245)
-    at libcore.net.http.HttpConnection.setupSecureSocket(HttpConnection.java:209)
-    ... 修改为以下代码后，就可以下载xml文件了。但用到的API都是deprecated.
-     */
-    private byte[] getUrlBytesDeprecated(String urlSpec) throws IOException {
-        HttpParams params = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(params, 2000);
-        HttpConnectionParams.setSoTimeout(params, 20000);
-        HttpClient httpClient = new DefaultHttpClient(params);
-        HttpGet httpGet = new HttpGet(urlSpec);
-        HttpPost httpPost = new HttpPost(urlSpec);
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        
-        if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            return null;
-        } else {
-            return EntityUtils.toByteArray(httpResponse.getEntity());
-        }
+        return result;
     }
 
-    public String getUrl(String urlSpec) throws IOException {
-        byte[] bytes = getUrlBytes(urlSpec);
-        if (bytes != null) {
-            return new String(bytes);
-        }
-        return null;
-    }
-
-    // Search和getRecent命令获取的xml格式一致，因此可以使用相同的代码解析。
-    public List<GalleryItem> downloadGalleryItems(String url) {
+    /** The files format of Search and GetRecent are the same. So use same method to parse. */
+    private List<GalleryItem> downloadGalleryItems(String url) {
         List<GalleryItem> items = new ArrayList<>();
 
         try {
-            String jsonString = getUrl(url);
+            String jsonString = null;
+            byte[] bytes = getUrlBytes(url);
+            if (bytes != null) {
+                jsonString = new String(bytes);
+            }
+
             if (jsonString != null) {
                 Log.d(TAG, "Received json string: " + jsonString);
                 parseItems(items, new JSONObject(jsonString));
@@ -147,20 +123,14 @@ public class FlickrFetcher {
 
         return items;
     }
-    
-    // 封装getRecent的Url请求。
-    public List<GalleryItem> fetchItems() {
-        String url = Uri.parse(ENDPOINT).buildUpon()
-                .appendQueryParameter("method", METHOD_GET_RECENT)
-                .appendQueryParameter("api_key", API_KEY)
-                .appendQueryParameter("format", "json")
-                .appendQueryParameter("nojsoncallback", "1")
-                .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
-                .build().toString();
-        return downloadGalleryItems(url);
+
+    /** Get recent photos */
+    public List<GalleryItem> getRecent() {
+        return downloadGalleryItems(FlickrUrl.buildRecentUrl());
     }
 
-    public List<GalleryItem> fetchItemsFromLocal(Context context, int rawId) {
+    /** Get photos from local json file */
+    public List<GalleryItem> getItemsFromLocal(Context context, int rawId) {
         List<GalleryItem> items = new ArrayList<>();
         String jsonString = FileUtils.loadRawFileToString(context, R.raw.data);
         try {
@@ -172,19 +142,10 @@ public class FlickrFetcher {
         }
         return items;
     }
-    
-    // 封装Search的Url请求。
+
+    /** Search photos */
     public List<GalleryItem> search(String query) {
-        String url = Uri.parse(ENDPOINT).buildUpon()
-                .appendQueryParameter("method", METHOD_SEARCH)
-                .appendQueryParameter("api_key", API_KEY)
-                .appendQueryParameter("format", "json")
-                .appendQueryParameter("nojsoncallback", "1")
-                .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
-                .appendQueryParameter(PARAM_TEXT, query)
-                .build().toString();
-        Log.d(TAG, "url= " + url);
-        return downloadGalleryItems(url);
+        return downloadGalleryItems(FlickrUrl.buildSearchUrl(query));
     }
     
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException, IOException {
@@ -194,16 +155,15 @@ public class FlickrFetcher {
         for (int i=0; i<photoJsonArray.length(); i++) {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
             /*
+            Use GSON instead
             GalleryItem item = new GalleryItem();
             item.setStableId(i);
             item.setId(photoJsonObject.getString("id"));
             item.setOwner(photoJsonObject.getString("owner"));
             item.setTitle(photoJsonObject.getString("title"));
-
             if (!photoJsonObject.has("url_s")) {
                 return;
             }
-
             item.setUrl(photoJsonObject.getString("url_s"));
             */
             Gson gson = new Gson();
@@ -216,11 +176,6 @@ public class FlickrFetcher {
 
     private static final String PREF_SEARCH_QUERY = "searchQuery";
     private static final String PREF_LAST_RESULT_ID = "lastResultId";
-
-    // 存储搜索信息。
-    // 使用shared preferences实现轻量级数据的永久存储；
-    // shared preferences是一种存储key-value的xml文件，可使用SharedPreferences类读写；
-    // 由于其共享于整个应用，所以通常采取下述办法获取具有私有权限与默认名称的实例。
 
     private static String getPrefValue(Context context, String key) {
         return PreferenceManager

@@ -56,7 +56,7 @@ public class PollService extends IntentService {
         if (query != null) {
             items = new FlickrFetcher().search(query);
         } else {
-            items = new FlickrFetcher().fetchItems();
+            items = new FlickrFetcher().getRecent();
         }
         
         if (items.size() == 0) {
