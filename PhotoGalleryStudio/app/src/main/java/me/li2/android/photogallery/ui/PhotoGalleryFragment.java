@@ -4,8 +4,10 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.NinePatchDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -28,6 +30,7 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import me.li2.android.photogallery.R;
 import me.li2.android.photogallery.download.FlickrFetcher;
 import me.li2.android.photogallery.download.PollService;
+import me.li2.android.photogallery.model.GalleryItem;
 import me.li2.android.photogallery.ui.basic.VisibleFragment;
 import me.li2.android.photogallery.ui.widget.RecyclerViewMarginDecoration;
 
@@ -81,6 +84,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
 
         // setup RecyclerView adapter
         mPhotoAdapter = new PhotoAdapter(this);
+        mPhotoAdapter.setOnPhotoViewHolderClickListener(mOnPhotoViewHolderClickListener);
 
         createDragDropManager();
 
@@ -108,6 +112,24 @@ public class PhotoGalleryFragment extends VisibleFragment {
         }
 
         destroyDragDropManager();
+    }
+
+    private PhotoViewHolder.OnPhotoViewHolderClickListener mOnPhotoViewHolderClickListener =
+            new PhotoViewHolder.OnPhotoViewHolderClickListener() {
+                @Override
+                public void onThumbnailClick(final GalleryItem item) {
+                    if (getActivity() != null) {
+                        startPhotoPageView(item.getPhotoPageUrl());
+                    }
+                }
+            };
+
+    private void startPhotoPageView(Uri pageUrl) {
+        // use explicit intent instead of implicit intent, to open photo in App's WebView, not browser outside.
+        // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
+        Intent intent = new Intent(getActivity(), PhotoPageActivity.class);
+        intent.setData(pageUrl);
+        getActivity().startActivity(intent);
     }
 
     // 添加选项菜单的回调方法 Options menu callbacks:

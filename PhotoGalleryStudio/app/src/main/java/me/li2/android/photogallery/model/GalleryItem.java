@@ -1,5 +1,6 @@
 package me.li2.android.photogallery.model;
 
+import android.net.Uri;
 import android.util.Log;
 
 public class GalleryItem {
@@ -62,8 +63,9 @@ public class GalleryItem {
     }
     
     // Build photo page url from XML base on Flickr's doc.
-    public String getPhotoPageUrl() {
-        return "http://www.flickr.com/photos/" + owner + "/" + id;
+    public Uri getPhotoPageUrl() {
+        String url = "http://www.flickr.com/photos/" + owner + "/" + id;
+        return Uri.parse(url);
     }
 
     public void print() {

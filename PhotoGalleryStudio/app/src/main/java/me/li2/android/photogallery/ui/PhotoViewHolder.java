@@ -1,15 +1,12 @@
 package me.li2.android.photogallery.ui;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder;
 
@@ -36,6 +33,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
     private TextView mImageIndicator;
     private GalleryItem mGalleryItem;
     private RequestImageListener mRequestImageListener;
+    private OnPhotoViewHolderClickListener mOnPhotoViewHolderClickListener;
 
     public enum IndicatorType {
         DEFAULT,
@@ -44,11 +42,16 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         INTERNET,
     }
 
+    public interface OnPhotoViewHolderClickListener {
+        void onThumbnailClick(final GalleryItem item);
+    }
+
     public interface RequestImageListener {
         void onRequestImage(final PhotoViewHolder photoViewHolder, final String url);
     }
 
-    public PhotoViewHolder(Context context, CacheManager cacheManager, RequestImageListener listener, View itemView) {
+    public PhotoViewHolder(Context context, CacheManager cacheManager, RequestImageListener listener, View itemView,
+                           OnPhotoViewHolderClickListener onPhotoViewHolderClickListener) {
         super(itemView);
         mContext = context;
         mCacheManager = cacheManager;
@@ -56,6 +59,7 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
         mImageIndicator = (TextView) itemView.findViewById(R.id.gallery_item_indicator);
         mImageView.setOnClickListener(this);
         mRequestImageListener = listener;
+        mOnPhotoViewHolderClickListener = onPhotoViewHolderClickListener;
     }
 
     // Load bitmap
@@ -123,15 +127,9 @@ public class PhotoViewHolder extends AbstractDraggableItemViewHolder implements 
 
     @Override
     public void onClick(View view) {
-        // Use getAdapterPosition() instead of getPosition
-        Toast.makeText(mContext, "Click item " + getAdapterPosition(), Toast.LENGTH_LONG).show();
-
-        Uri photoPageUri = Uri.parse(mGalleryItem.getPhotoPageUrl());
-        // Intent i = new Intent(Intent.ACTION_VIEW, photoPageUri);
-        // 使用显示explicit intent 代替隐式implicit intent，在应用内的WebView中打开图片，而不是在外部的浏览器。
-        Intent intent = new Intent(mContext, PhotoPageActivity.class);
-        intent.setData(photoPageUri);
-        mContext.startActivity(intent);
+        if (mOnPhotoViewHolderClickListener != null) {
+            mOnPhotoViewHolderClickListener.onThumbnailClick(mGalleryItem);
+        }
     }
 
     // check disk cache in a background task

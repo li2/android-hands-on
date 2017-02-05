@@ -46,6 +46,7 @@ public class PhotoAdapter
     private Context mContext;
     private CacheManager mCacheManager;
     private GalleryItemProvider<PhotoViewHolder> mDataProvider;
+    private PhotoViewHolder.OnPhotoViewHolderClickListener mOnPhotoViewHolderClickListener;
 
     public PhotoAdapter(Fragment fragment) {
         mAttachedFragment = fragment;
@@ -71,6 +72,10 @@ public class PhotoAdapter
         mDataProvider.updateData();
     }
 
+    public void setOnPhotoViewHolderClickListener(PhotoViewHolder.OnPhotoViewHolderClickListener l) {
+        mOnPhotoViewHolderClickListener = l;
+    }
+
     @Override
     public PhotoViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(mContext);
@@ -91,7 +96,7 @@ public class PhotoAdapter
 
         itemView.setLayoutParams(new GridLayoutManager.LayoutParams(width, height));
 
-        return new PhotoViewHolder(mContext, mCacheManager, mRequestImageListener, itemView);
+        return new PhotoViewHolder(mContext, mCacheManager, mRequestImageListener, itemView, mOnPhotoViewHolderClickListener);
     }
 
     @Override
