@@ -3,6 +3,8 @@ package me.li2.android.photogallery.model;
 import android.net.Uri;
 import android.util.Log;
 
+import me.li2.android.photogallery.download.FlickrUrl;
+
 public class GalleryItem {
     private int stableId; // DraggableItemAdapter requires stable ID
     private String title;
@@ -66,6 +68,10 @@ public class GalleryItem {
     public Uri getPhotoPageUrl() {
         String url = "http://www.flickr.com/photos/" + owner + "/" + id;
         return Uri.parse(url);
+    }
+
+    public String getLargeSizeUrl() {
+        return FlickrUrl.buildLargeSizeUrl(url_s);
     }
 
     public void print() {

@@ -3,6 +3,8 @@ package me.li2.android.photogallery.download;
 import android.content.res.Resources;
 import android.net.Uri;
 
+import org.apache.commons.io.FilenameUtils;
+
 import me.li2.android.photogallery.R;
 
 /**
@@ -68,5 +70,24 @@ public class FlickrUrl {
                 .appendQueryParameter(KEY_PARAM_TEXT, query)
                 .build().toString();
         return url;
+    }
+
+    /**
+     * Builds an request URL of large size photo.
+     * Size Suffixes: s, m, h, etc.
+     * example: https://farm2.staticflickr.com/1483/24347520375_2c7236f008_h.jpg
+     * size is h
+     *
+     * Refer to Photo Source URLs https://www.flickr.com/services/api/misc.urls.html
+     * @return
+     */
+    public static String buildLargeSizeUrl(String thumbnailUrl)
+    {
+        String suffix = thumbnailUrl.substring(thumbnailUrl.lastIndexOf("."));
+        String url = FilenameUtils.removeExtension(thumbnailUrl);
+        StringBuilder urlBuilder = new StringBuilder(url);
+        urlBuilder.setCharAt(url.length()-1, 'h');
+
+        return urlBuilder.toString() + suffix;
     }
 }
